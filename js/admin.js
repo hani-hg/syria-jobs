@@ -54,6 +54,7 @@ async function deleteSubmission(id) {
 }
 
 $('#loginForm').addEventListener('submit', async (event) => { event.preventDefault(); const button = event.currentTarget.querySelector('button'); button.disabled = true; showMessage('#loginMessage', 'جارٍ تسجيل الدخول...'); const { data, error } = await client.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value }); if (error) showMessage('#loginMessage', 'بيانات الدخول غير صحيحة أو الحساب غير مفعّل.', true); else await startSession(data.session); button.disabled = false; });
+$('#togglePassword').addEventListener('click', () => { const input = $('#password'); const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; $('#togglePassword').textContent = visible ? 'إظهار' : 'إخفاء'; $('#togglePassword').setAttribute('aria-label', visible ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور'); });
 $('#submissionsList').addEventListener('click', (event) => { const button = event.target.closest('button[data-action]'); if (!button) return; button.dataset.action === 'delete' ? deleteSubmission(button.dataset.id) : updateStatus(button.dataset.id, button.dataset.action); });
 document.querySelectorAll('.admin-tabs button').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.admin-tabs button').forEach((item) => item.classList.remove('active')); button.classList.add('active'); currentStatus = button.dataset.status; loadSubmissions(); }));
 $('#refreshBtn').addEventListener('click', loadSubmissions);

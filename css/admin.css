@@ -5,6 +5,10 @@
 .admin-login > p:not(.eyebrow) { margin: 8px 0 25px; color: var(--muted); }
 .admin-login form { display: grid; gap: 16px; }
 .admin-login label { display: grid; gap: 5px; color: var(--green-900); font-size: 13px; font-weight: 700; }
+.password-wrap { position: relative; display: flex; direction: ltr; }
+.password-wrap input { padding-left: 76px; }
+.password-wrap button { position: absolute; left: 7px; top: 50%; min-width: 60px; padding: 4px 7px; border: 0; border-radius: 6px; background: #edf5ef; color: var(--green-800); font: inherit; font-size: 11px; cursor: pointer; transform: translateY(-50%); }
+.password-wrap button:hover { background: #dcece0; }
 .admin-message { min-height: 24px; margin-top: 12px; color: var(--green-700); font-size: 13px; }
 .admin-message.error { color: #a33131; }
 .admin-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
