@@ -1,3 +1,8 @@
+/ --- إعدادات Supabase ---
+const SUPABASE_URL = 'https://zpbwsdjyzgtlwwpfywcg.supabase.co ا_Project_URL';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwYndzZGp5emd0bHd3cGZ5d2NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTU0MDYsImV4cCI6MjEwODc3MTQwNn0.CjnXWEnxM-u9lW9ftzu4BcLL6FR0qLt-i1AD5J7CcIE_anon_public_key';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const sampleJobs = [
   { id: 'job-1', title: 'مهندس برمجيات', company: 'شركة تقنية سورية', governorate: 'دمشق', field: 'تقنية المعلومات', type: 'خاص', deadline: '2026-12-20', description: 'تطوير وصيانة تطبيقات الويب والعمل ضمن فريق تقني متكامل.', source: 'https://www.linkedin.com/jobs/' },
   { id: 'job-2', title: 'مدرس لغة إنكليزية', company: 'مديرية التربية', governorate: 'حلب', field: 'التعليم', type: 'حكومي', deadline: '2026-11-30', description: 'فرصة تدريس للمدارس العامة وفق الشروط المعلنة من الجهة الرسمية.', source: 'https://moed.gov.sy/' },
@@ -13,11 +18,27 @@ const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => (
 const isActive = (job) => job.deadline && new Date(`${job.deadline}T23:59:59`) >= new Date();
 const formatDate = (date) => new Intl.DateTimeFormat('ar-SY', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(`${date}T12:00:00`));
 
-function loadJobs() {
-  const submitted = JSON.parse(localStorage.getItem('وظائف-سوريا-قيد-المراجعة') || '[]');
-  allJobs = [...sampleJobs, ...submitted].filter(isActive);
-  populateFilters();
-  applyFilters();
+// جلب البيانات من Supabase
+async function loadJobs() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('jobs')
+      .select('*')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    // تصفية الإعلانات المنتهية وإضافة الإعلانات التجريبية
+    const activeDbJobs = (data || []).filter(isActive);
+    allJobs = [...sampleJobs, ...activeDbJobs].filter(isActive);
+    
+    populateFilters();
+    applyFilters();
+  } catch (error) {
+    console.error('Error loading jobs:', error);
+    showToast('حدث خطأ في تحميل الإعلانات', 'error');
+  }
 }
 
 function populateFilters() {
@@ -69,14 +90,35 @@ function showToast(message, type = 'success') {
   window.setTimeout(() => { toast.className = 'toast'; }, 3500);
 }
 
-function handlePublish(event) {
+// حفظ إعلان جديد في Supabase
+async function handlePublish(event) {
   event.preventDefault();
-  const data = Object.fromEntries(new FormData(event.currentTarget).entries());
-  const pending = JSON.parse(localStorage.getItem('وظائف-سوريا-قيد-المراجعة') || '[]');
-  pending.unshift({ ...data, id: `pending-${Date.now()}`, type: 'خاص', status: 'pending' });
-  localStorage.setItem('وظائف-سوريا-قيد-المراجعة', JSON.stringify(pending));
-  event.currentTarget.reset();
-  showToast('تم استلام الإعلان، وهو الآن قيد المراجعة.');
+  const formData = new FormData(event.currentTarget);
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const { error } = await supabaseClient
+      .from('jobs')
+      .insert([{
+        title: data.title,
+        company: data.company,
+        governorate: data.governorate,
+        field: data.field,
+        type: 'خاص',
+        deadline: data.deadline,
+        description: data.description,
+        source: data.source || '',
+        status: 'pending' // يذهب للمراجعة
+      }]);
+
+    if (error) throw error;
+
+    event.currentTarget.reset();
+    showToast('تم استلام الإعلان، وهو الآن قيد المراجعة.');
+  } catch (error) {
+    console.error('Error submitting job:', error);
+    showToast('حدث خطأ أثناء إرسال الإعلان', 'error');
+  }
 }
 
 function toggleMenu() { document.querySelector('.main-nav').classList.toggle('open'); }
