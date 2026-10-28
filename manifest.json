@@ -1,11 +1,11 @@
 {
-  "name": "Modern Exhibition - كتالوج الأثاث",
-  "short_name": "Modern Exhibition",
-  "description": "كتالوج معرض متخصص في الأثاث والألمنيوم الفاخر",
+  "name": "وظائف سوريا",
+  "short_name": "وظائف سوريا",
+  "description": "منصة متخصصة لعرض الوظائف والفرص في سوريا",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F5F0E8",
-  "theme_color": "#5D4037",
+  "background_color": "#F7F5EE",
+  "theme_color": "#123D2B",
   "orientation": "portrait",
   "icons": [
     {
