@@ -13,23 +13,65 @@ create table if not exists public.job_submissions (
   created_at timestamptz not null default now()
 );
 
-create index if not exists job_submissions_status_deadline_idx
-  on public.job_submissions (status, deadline);
+create index if not exists job_submissions_status_deadline_idx on public.job_submissions (status, deadline);
+
+-- لا تستخدم service_role في المتصفح. أضف UID مدير موثوق هنا بعد إنشاء حسابه في Supabase Auth.
+create table if not exists public.admin_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
 
 alter table public.job_submissions enable row level security;
+alter table public.admin_users enable row level security;
 
--- الزوار يرون الإعلانات الموافق عليها فقط.
+-- دالة داخلية للتحقق من المدير، لا تُعرض كواجهة عامة.
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from public.admin_users where user_id = auth.uid());
+$$;
+
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- الزوار يرون الإعلانات المعتمدة، والمدير يرى كل الحالات.
 drop policy if exists "public can read approved jobs" on public.job_submissions;
 create policy "public can read approved jobs"
   on public.job_submissions for select
   to anon, authenticated
-  using (status = 'approved');
+  using (status = 'approved' or public.is_admin());
 
--- يسمح النموذج العام بإرسال طلب جديد فقط، ولا يسمح للزائر باعتماده بنفسه.
+-- النموذج العام يرسل طلبات خاصة قيد المراجعة فقط.
 drop policy if exists "public can submit pending jobs" on public.job_submissions;
 create policy "public can submit pending jobs"
   on public.job_submissions for insert
   to anon, authenticated
   with check (status = 'pending' and type = 'خاص');
 
--- لا توجد صلاحيات عامة للتعديل أو الحذف.
+-- المدير فقط يستطيع الاعتماد أو الرفض أو التعديل أو الحذف.
+drop policy if exists "admins can update jobs" on public.job_submissions;
+create policy "admins can update jobs"
+  on public.job_submissions for update
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "admins can delete jobs" on public.job_submissions;
+create policy "admins can delete jobs"
+  on public.job_submissions for delete
+  to authenticated
+  using (public.is_admin());
+
+-- المدير يستطيع التحقق من صفه فقط. إضافة المدراء تتم من SQL Editor بصلاحية مالك المشروع.
+drop policy if exists "admins can read own admin row" on public.admin_users;
+create policy "admins can read own admin row"
+  on public.admin_users for select
+  to authenticated
+  using (user_id = auth.uid());
+
+-- بعد إنشاء مستخدم في Authentication > Users، نفّذ:
+-- insert into public.admin_users (user_id) values ('USER_UUID_HERE');
