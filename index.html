@@ -1,148 +1,256 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الأثاث العصري | كتالوج الأثاث</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://upload-widget.cloudinary.com/global/all.js" defer></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDagDhybZwbnKOvnLBBARMX9-ErLw964Mo",
-            authDomain: "modern-exhibition.firebaseapp.com",
-            projectId: "modern-exhibition",
-            storageBucket: "modern-exhibition.firebasestorage.app",
-            messagingSenderId: "870468289709",
-            appId: "1:870468289709:web:fe0ca644c24e37f818b224"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-
-        window.db = db;
-        window.storage = storage;
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.getDocs = getDocs;
-        window.doc = doc;
-        window.getDoc = getDoc;
-        window.updateDoc = updateDoc;
-        window.deleteDoc = deleteDoc;
-        window.query = query;
-        window.orderBy = orderBy;
-        window.where = where;
-        window.ref = ref;
-        window.uploadBytes = uploadBytes;
-        window.getDownloadURL = getDownloadURL;
-        console.log("Firebase Ready");
-    </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>وظائف سوريا | كل الشواغر بمكان واحد</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --text:#1a1d23; --muted:#6b7280;
+    --primary:#0f766e; --primary-d:#0b5c55; --border:#e5e7eb;
+    --chip:#f0fdfa; --danger:#dc2626;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1115; --card:#181b21; --text:#eef0f2; --muted:#9aa1ab;
+      --primary:#2dd4bf; --primary-d:#14b8a6; --border:#2a2e37;
+      --chip:#132a28; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1115; --card:#181b21; --text:#eef0f2; --muted:#9aa1ab;
+    --primary:#2dd4bf; --primary-d:#14b8a6; --border:#2a2e37;
+    --chip:#132a28; color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:"Tahoma","Segoe UI",system-ui,sans-serif;}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);
+    background:var(--bg);z-index:10;}
+  header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--border);
+    padding:14px 18px;padding-top:calc(14px + env(safe-area-inset-top,0px));
+    display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  header h1{font-size:18px;margin:0;color:var(--primary-d);}
+  header .sub{font-size:12px;color:var(--muted);}
+  main{max-width:900px;margin:0 auto;padding:16px;}
+  .search-box{display:flex;flex-direction:column;gap:10px;background:var(--card);
+    border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:18px;}
+  .search-box input, .search-box select{
+    padding:10px 12px;border-radius:10px;border:1px solid var(--border);
+    background:var(--bg);color:var(--text);font-size:14px;width:100%;}
+  .filters-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .filters-row > *{flex:1;min-width:120px;}
+  .count{font-size:13px;color:var(--muted);margin-bottom:10px;}
+  .cards{display:flex;flex-direction:column;gap:12px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:16px;}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .card h3{margin:0 0 6px;font-size:16px;}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+  .badge{font-size:12px;background:var(--chip);color:var(--primary-d);
+    padding:4px 10px;border-radius:999px;white-space:nowrap;}
+  .badge.deadline{color:var(--danger);background:transparent;border:1px solid var(--danger);}
+  .card p{font-size:13.5px;color:var(--muted);line-height:1.6;margin:8px 0;}
+  .card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+  .card-foot a{font-size:13px;color:var(--primary);text-decoration:none;font-weight:bold;}
+  .updated{font-size:11px;color:var(--muted);}
+  .cta{position:fixed;bottom:18px;left:18px;background:var(--primary);color:#fff;border:none;
+    padding:14px 20px;border-radius:999px;font-size:14px;font-weight:bold;
+    box-shadow:0 6px 16px rgba(0,0,0,.2);cursor:pointer;
+    padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));}
+  .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px;}
+  footer{text-align:center;font-size:12px;color:var(--muted);padding:30px 10px 60px;}
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;
+    align-items:flex-end;justify-content:center;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--card);width:100%;max-width:480px;border-radius:18px 18px 0 0;
+    padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));}
+  .modal h2{margin-top:0;font-size:16px;}
+  .modal textarea, .modal input{width:100%;margin-bottom:10px;padding:10px;border-radius:10px;
+    border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;}
+  .modal textarea{min-height:80px;resize:vertical;}
+  .modal-actions{display:flex;gap:10px;}
+  .modal-actions button{flex:1;padding:12px;border-radius:10px;border:none;font-size:14px;cursor:pointer;}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border) !important;}
+</style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div class="container top-bar-inner">
-            <span>مرحباً بكم في الأثاث العصري</span>
-            <span>سوريا - دير الزور - صبيخان</span>
-        </div>
+<header>
+  <div>
+    <h1>وظائف سوريا</h1>
+    <div class="sub">كل الشواغر الحكومية والخاصة بمكان واحد</div>
+  </div>
+  <div class="updated" id="lastUpdated"></div>
+</header>
+
+<main>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="ابحث عن مسمى وظيفي...">
+    <div class="filters-row">
+      <select id="locationFilter"><option value="">كل المحافظات</option></select>
+      <select id="categoryFilter"><option value="">كل المجالات</option></select>
+      <select id="typeFilter">
+        <option value="">حكومي وخاص</option>
+        <option value="حكومي">حكومي فقط</option>
+        <option value="خاص">خاص فقط</option>
+      </select>
     </div>
+  </div>
 
-    <header class="header">
-        <div class="container header-inner">
-            <div class="logo">
-                <img src="https://images.unsplash.com/photo-1505993597083-3f3e1bbf4f0c?w=80&h=80&fit=crop" alt="جسر دير الزور" />
-                <div>
-                    <h1>الأثاث العصري</h1>
-                    <p>كتالوج الأثاث والألمنيوم الفاخر</p>
-                </div>
-            </div>
-            <div class="header-search">
-                <input type="text" id="globalSearch" placeholder="ابحث عن منتج..." oninput="globalSearch()" />
-                <button class="btn-search" onclick="globalSearch()">بحث</button>
-            </div>
-            <nav>
-                <a href="#" onclick="showHome()">الرئيسية</a>
-                <a href="#" onclick="showProducts()">المنتجات</a>
-                <a href="#" id="addProductNav" onclick="showAddProduct()" style="display:none;">إضافة</a>
-                <a href="#" onclick="showFeatured()">مميزات</a>
-            </nav>
-            <button class="menu-toggle" onclick="toggleMobile()">☰</button>
+  <div class="count" id="resultCount"></div>
+  <div class="cards" id="cardsContainer"></div>
+  <div class="empty" id="emptyState" style="display:none;">لا توجد نتائج مطابقة حالياً</div>
+</main>
+
+<button class="cta" onclick="openModal()">+ انشر طلب توظيف</button>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2>نشر طلب توظيف (قطاع خاص)</h2>
+    <input type="text" id="mTitle" placeholder="المسمى الوظيفي">
+    <input type="text" id="mLocation" placeholder="المحافظة">
+    <textarea id="mBody" placeholder="تفاصيل الوظيفة والشروط..."></textarea>
+    <input type="text" id="mContact" placeholder="رقم للتواصل">
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn-primary" onclick="submitAd()">نشر</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  هذا الموقع مجمّع لإعلانات التوظيف المنشورة من جهات رسمية وخاصة، وليس جهة توظيف. يرجى التحقق من كل فرصة بنفسك.
+</footer>
+
+<script>
+  // بيانات تجريبية مبدئية — ستُستبدل لاحقاً ببيانات من قاعدة البيانات
+  const ads = [
+    {
+      title: "محاسب / محاسبة",
+      type: "حكومي",
+      location: "دير الزور",
+      category: "مالي",
+      deadline: "2026-11-15",
+      body: "مطلوب محاسب لدى إحدى الجهات الحكومية، يشترط إجازة جامعية في المحاسبة أو ما يعادلها.",
+      source: "#",
+      sourceName: "وزارة التنمية الإدارية"
+    },
+    {
+      title: "سائق باص داخلي",
+      type: "حكومي",
+      location: "دمشق",
+      category: "خدمي",
+      deadline: "2026-11-05",
+      body: "مطلوب سائقين لباصات النقل الداخلي، رخصة قيادة سارية ومن سكان المحافظة.",
+      source: "#",
+      sourceName: "سانا"
+    },
+    {
+      title: "موظف استقبال",
+      type: "خاص",
+      location: "دير الزور",
+      category: "إداري",
+      deadline: "2026-11-20",
+      body: "محل تجاري بدير الزور يطلب موظف استقبال، إجادة التعامل مع العملاء وبرامج Office.",
+      source: "",
+      sourceName: ""
+    }
+  ];
+
+  function fmtDate(d){
+    const date = new Date(d);
+    return date.toLocaleDateString('ar-EG', {day:'numeric', month:'short', year:'numeric'});
+  }
+
+  function isExpired(d){
+    return new Date(d) < new Date(new Date().toDateString());
+  }
+
+  function populateFilters(){
+    const locs = [...new Set(ads.map(a=>a.location))];
+    const cats = [...new Set(ads.map(a=>a.category))];
+    const locSel = document.getElementById('locationFilter');
+    const catSel = document.getElementById('categoryFilter');
+    locs.forEach(l=>{
+      const o = document.createElement('option'); o.value=l; o.textContent=l; locSel.appendChild(o);
+    });
+    cats.forEach(c=>{
+      const o = document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o);
+    });
+  }
+
+  function render(){
+    const q = document.getElementById('searchInput').value.trim();
+    const loc = document.getElementById('locationFilter').value;
+    const cat = document.getElementById('categoryFilter').value;
+    const type = document.getElementById('typeFilter').value;
+
+    const filtered = ads.filter(a=>{
+      if (isExpired(a.deadline)) return false;
+      if (q && !a.title.includes(q)) return false;
+      if (loc && a.location !== loc) return false;
+      if (cat && a.category !== cat) return false;
+      if (type && a.type !== type) return false;
+      return true;
+    });
+
+    const container = document.getElementById('cardsContainer');
+    container.innerHTML = '';
+    document.getElementById('resultCount').textContent = `${filtered.length} فرصة متاحة`;
+    document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
+
+    filtered.forEach(a=>{
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = `
+        <div class="card-top">
+          <h3>${a.title}</h3>
         </div>
-        <div class="mobile-menu" id="mobileMenu">
-            <a href="#" onclick="showHome()">الرئيسية</a>
-            <a href="#" onclick="showProducts()">المنتجات</a>
-            <a href="#" onclick="showAddProduct()">إضافة</a>
-            <a href="#" onclick="showFeatured()">مميزات</a>
+        <div class="badges">
+          <span class="badge">${a.type}</span>
+          <span class="badge">${a.location}</span>
+          <span class="badge">${a.category}</span>
+          <span class="badge deadline">آخر موعد: ${fmtDate(a.deadline)}</span>
         </div>
-    </header>
-
-    <section class="quick-icons">
-        <div class="container">
-            <div class="quick-scroll">
-                <div class="quick-item" onclick="filterByCategory('أبواب')">
-                    <span class="qi-icon">🚪</span>
-                    <span>أبواب</span>
-                </div>
-                <div class="quick-item" onclick="filterByCategory('شبابيك')">
-                    <span class="qi-icon">🪟</span>
-                    <span>شبابيك</span>
-                </div>
-                <div class="quick-item" onclick="filterByCategory('غرف نوم')">
-                    <span class="qi-icon">🛏️</span>
-                    <span>غرف نوم</span>
-                </div>
-                <div class="quick-item" onclick="filterByCategory('مطابخ')">
-                    <span class="qi-icon">🍳</span>
-                    <span>مطابخ</span>
-                </div>
-                <div class="quick-item" onclick="filterByCategory('ألمنيوم')">
-                    <span class="qi-icon">🔩</span>
-                    <span>ألمنيوم</span>
-                </div>
-                <div class="quick-item" onclick="filterByCategory('ديكورات')">
-                    <span class="qi-icon">🎨</span>
-                    <span>ديكورات</span>
-                </div>
-            </div>
+        <p>${a.body}</p>
+        <div class="card-foot">
+          ${a.source ? `<a href="${a.source}" target="_blank">المصدر: ${a.sourceName}</a>` : '<span></span>'}
         </div>
-    </section>
+      `;
+      container.appendChild(el);
+    });
+  }
 
-    <main class="container" id="mainContent" style="min-height:60vh;padding:20px 0;"></main>
+  function openModal(){ document.getElementById('modalBg').classList.add('open'); }
+  function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div>
-                    <h4>الأثاث العصري</h4>
-                    <p>كتالوج معرض متخصص في الأثاث والألمنيوم الفاخر</p>
-                    <p style="color:var(--gold);">سوريا - دير الزور - صبيخان</p>
-                </div>
-                <div>
-                    <h4>روابط سريعة</h4>
-                    <a href="#" onclick="showHome()">الرئيسية</a>
-                    <a href="#" onclick="showProducts()">المنتجات</a>
-                    <a href="#" onclick="showAddProduct()">إضافة منتج</a>
-                </div>
-                <div>
-                    <h4>معلومات</h4>
-                    <p>سوريا - دير الزور - صبيخان</p>
-                    <p><a href="mailto:hg78@live.com">hg78@live.com</a></p>
-                    <p><a href="tel:+963996190945">+963 996 190 945</a></p>
-                    <p style="color:var(--gold);margin-top:8px;font-weight:600;">أحمد العبدالله</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>2025 الأثاث العصري - جميع الحقوق محفوظة</p>
-            </div>
-        </div>
-    </footer>
+  function submitAd(){
+    const title = document.getElementById('mTitle').value.trim();
+    const location = document.getElementById('mLocation').value.trim();
+    const body = document.getElementById('mBody').value.trim();
+    const contact = document.getElementById('mContact').value.trim();
+    if(!title || !location || !body || !contact){
+      alert('يرجى تعبئة جميع الحقول');
+      return;
+    }
+    // هنا لاحقاً: إرسال البيانات إلى قاعدة البيانات (Supabase) بحالة "قيد المراجعة"
+    alert('تم استلام طلبك، سيُنشر بعد المراجعة.');
+    closeModal();
+  }
 
-    <script src="js/app.js"></script>
-    <script src="js/toast.js"></script>
-    <script src="js/modal.js"></script>
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('locationFilter').addEventListener('change', render);
+  document.getElementById('categoryFilter').addEventListener('change', render);
+  document.getElementById('typeFilter').addEventListener('change', render);
+
+  document.getElementById('lastUpdated').textContent =
+    'آخر تحديث: ' + new Date().toLocaleDateString('ar-EG', {day:'numeric', month:'short'});
+
+  populateFilters();
+  render();
+</script>
 </body>
 </html>
