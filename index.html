@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -18,73 +19,41 @@
         <span><strong>وظائف سوريا</strong><small>فرصتك تبدأ من هنا</small></span>
       </a>
       <nav class="main-nav" aria-label="التنقل الرئيسي">
-        <a href="#jobs">الوظائف</a>
-        <a href="#publish">انشر وظيفة</a>
-        <a href="#about">عن المنصة</a>
+        <a href="#jobs">الوظائف</a><a href="#publish">انشر وظيفة</a><a href="#about">عن المنصة</a>
       </nav>
       <button class="menu-toggle" type="button" aria-label="فتح القائمة" onclick="toggleMenu()">☰</button>
     </div>
   </header>
 
   <main id="top">
-    <section class="hero">
-      <div class="container hero-grid">
-        <div>
-          <p class="eyebrow">منصة مجانية للباحثين عن عمل</p>
-          <h1>اكتشف فرصتك المهنية في سوريا</h1>
-          <p class="hero-text">إعلانات وظائف حكومية وخاصة في مكان واحد، مع معلومات واضحة ومصدر مباشر لكل إعلان.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="#jobs">تصفح الوظائف</a>
-            <a class="btn btn-outline" href="#publish">انشر طلب توظيف</a>
-          </div>
-        </div>
-        <div class="hero-card" aria-label="إحصائيات المنصة">
-          <span class="hero-card-icon">⌕</span>
-          <strong id="heroCount">0</strong>
-          <span>فرصة متاحة حاليًا</span>
-          <small>يتم إخفاء الإعلانات المنتهية تلقائيًا</small>
-        </div>
-      </div>
-    </section>
+    <section class="hero"><div class="container hero-grid"><div>
+      <p class="eyebrow">منصة مجانية للباحثين عن عمل</p><h1>اكتشف فرصتك المهنية في سوريا</h1>
+      <p class="hero-text">إعلانات وظائف حكومية وخاصة في مكان واحد، مع معلومات واضحة ومصدر مباشر لكل إعلان.</p>
+      <div class="hero-actions"><a class="btn btn-primary" href="#jobs">تصفح الوظائف</a><a class="btn btn-outline" href="#publish">انشر طلب توظيف</a></div>
+    </div><div class="hero-card" aria-label="إحصائيات المنصة"><span class="hero-card-icon">⌕</span><strong id="heroCount">0</strong><span>فرصة متاحة حاليًا</span><small>يتم إخفاء الإعلانات المنتهية تلقائيًا</small></div></div></section>
 
-    <section class="jobs-section container" id="jobs">
-      <div class="section-heading">
-        <div><p class="eyebrow">آخر الفرص المنشورة</p><h2>ابحث عن وظيفتك</h2></div>
-        <span class="results-count" id="resultsCount">0 إعلان</span>
-      </div>
+    <section class="jobs-section container" id="jobs"><div class="section-heading"><div><p class="eyebrow">آخر الفرص المنشورة</p><h2>ابحث عن وظيفتك</h2></div><span class="results-count" id="resultsCount">0 إعلان</span></div>
       <div class="filters" aria-label="تصفية الوظائف">
         <label><span>بحث</span><input id="searchInput" type="search" placeholder="المسمى أو الجهة..." oninput="applyFilters()"></label>
         <label><span>المحافظة</span><select id="governorateFilter" onchange="applyFilters()"><option value="">كل المحافظات</option></select></label>
         <label><span>المجال</span><select id="fieldFilter" onchange="applyFilters()"><option value="">كل المجالات</option></select></label>
         <label><span>النوع</span><select id="typeFilter" onchange="applyFilters()"><option value="">حكومي وخاص</option><option value="حكومي">حكومي</option><option value="خاص">خاص</option></select></label>
-      </div>
-      <div class="jobs-grid" id="jobsGrid" aria-live="polite"></div>
+      </div><div class="jobs-grid" id="jobsGrid" aria-live="polite"></div>
     </section>
 
-    <section class="publish-section" id="publish">
-      <div class="container publish-grid">
-        <div><p class="eyebrow">لأصحاب الشركات والمكاتب</p><h2>انشر طلب توظيف</h2><p>أرسل تفاصيل الوظيفة للمراجعة. سيتم نشر الإعلان بعد التحقق من البيانات.</p></div>
-        <form id="publishForm" class="publish-form">
-          <label>المسمى الوظيفي<input name="title" required placeholder="مثال: محاسب"></label>
-          <label>اسم الجهة<input name="company" required placeholder="اسم الشركة أو المؤسسة"></label>
-          <div class="form-row"><label>المحافظة<input name="governorate" required placeholder="دمشق"></label><label>المجال<input name="field" required placeholder="محاسبة"></label></div>
-          <div class="form-row"><label>آخر موعد للتقديم<input name="deadline" type="date" required></label><label>رابط المصدر<input name="source" type="url" required placeholder="https://..."></label></div>
-          <label>تفاصيل الوظيفة<textarea name="description" rows="4" required placeholder="المهام، الشروط، وطريقة التقديم..."></textarea></label>
-          <button class="btn btn-gold" type="submit">إرسال للمراجعة</button>
-          <p class="form-note">النموذج يعمل محليًا مؤقتًا، وسيتم ربطه بـ Supabase لاحقًا.</p>
-        </form>
-      </div>
-    </section>
+    <section class="publish-section" id="publish"><div class="container publish-grid"><div><p class="eyebrow">لأصحاب الشركات والمكاتب</p><h2>انشر طلب توظيف</h2><p>أرسل تفاصيل الوظيفة للمراجعة. سيتم نشر الإعلان بعد التحقق من البيانات.</p></div>
+      <form id="publishForm" class="publish-form">
+        <label>المسمى الوظيفي<input name="title" required placeholder="مثال: محاسب"></label><label>اسم الجهة<input name="company" required placeholder="اسم الشركة أو المؤسسة"></label>
+        <div class="form-row"><label>المحافظة<input name="governorate" required placeholder="دمشق"></label><label>المجال<input name="field" required placeholder="محاسبة"></label></div>
+        <div class="form-row"><label>آخر موعد للتقديم<input name="deadline" type="date" required></label><label>رابط المصدر<input name="source" type="url" required placeholder="https://..."></label></div>
+        <label>تفاصيل الوظيفة<textarea name="description" rows="4" required placeholder="المهام، الشروط، وطريقة التقديم..."></textarea></label>
+        <button class="btn btn-gold" type="submit">إرسال للمراجعة</button><p class="form-note">تُحفظ الطلبات فعليًا في Supabase بحالة «قيد المراجعة».</p>
+      </form>
+    </div></section>
 
-    <section class="about-section container" id="about">
-      <div class="about-card"><span class="about-number">01</span><div><h3>مصدر واضح</h3><p>نضيف رابط المصدر لكل إعلان لتسهيل التحقق وحماية الباحث عن عمل.</p></div></div>
-      <div class="about-card"><span class="about-number">02</span><div><h3>مشاركة سهلة</h3><p>شارك أي فرصة مباشرة عبر واتساب مع رابط يفتح الإعلان نفسه.</p></div></div>
-      <div class="about-card"><span class="about-number">03</span><div><h3>تحديث مستمر</h3><p>تختفي الفرص المنتهية تلقائيًا حتى تبقى النتائج مفيدة وحديثة.</p></div></div>
-    </section>
+    <section class="about-section container" id="about"><div class="about-card"><span class="about-number">01</span><div><h3>مصدر واضح</h3><p>نضيف رابط المصدر لكل إعلان لتسهيل التحقق وحماية الباحث عن عمل.</p></div></div><div class="about-card"><span class="about-number">02</span><div><h3>مشاركة سهلة</h3><p>شارك أي فرصة مباشرة عبر واتساب مع رابط يفتح الإعلان نفسه.</p></div></div><div class="about-card"><span class="about-number">03</span><div><h3>تحديث مستمر</h3><p>تختفي الفرص المنتهية تلقائيًا حتى تبقى النتائج مفيدة وحديثة.</p></div></div></section>
   </main>
-
-  <footer class="site-footer"><div class="container"><strong>وظائف سوريا</strong><span>منصة مجانية للوظائف الحكومية والخاصة</span><small>© 2026 وظائف سوريا</small></div></footer>
-  <div id="toast" class="toast" role="status"></div>
+  <footer class="site-footer"><div class="container"><strong>وظائف سوريا</strong><span>منصة مجانية للوظائف الحكومية والخاصة</span><small>© 2026 وظائف سوريا</small></div></footer><div id="toast" class="toast" role="status"></div>
   <script src="js/app.js"></script>
 </body>
 </html>
