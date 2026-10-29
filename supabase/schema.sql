@@ -27,6 +27,11 @@ create table if not exists public.admin_users (
 alter table public.job_submissions enable row level security;
 alter table public.admin_users enable row level security;
 
+grant usage on schema public to anon, authenticated;
+grant select, insert on table public.job_submissions to anon, authenticated;
+grant select, insert, update, delete on table public.job_submissions to authenticated;
+grant select on table public.admin_users to authenticated;
+
 -- دالة داخلية للتحقق من المدير، لا تُعرض كواجهة عامة.
 create or replace function public.is_admin()
 returns boolean
