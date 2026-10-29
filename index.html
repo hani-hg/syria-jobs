@@ -1,133 +1,83 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>وظائف سوريا | فرص العمل الحكومية والخاصة</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>وظائف سوريا | كل الشواغر بمكان واحد</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <header class="site-header">
-    <div class="container header-content">
-      <a href="#" class="logo">
-        <span class="logo-mark">وظائف</span>
-        <span class="logo-text">سوريا</span>
-      </a>
-      <nav class="main-nav">
-        <a href="#jobs">الوظائف</a>
-        <a href="#publish" class="btn btn-outline">انشر وظيفة</a>
-      </nav>
+<header>
+  <h1>وظائف سوريا</h1>
+  <button class="btn-outline" onclick="openModal()">انشر وظيفة</button>
+</header>
+
+<section class="hero">
+  <div class="hero-blob"></div>
+  <span class="pill">منصة مجانية بالكامل</span>
+  <h2>اعثر على <span>وظيفتك التالية</span><br>في سوريا</h2>
+  <p>إعلانات حكومية وخاصة بمصدر واضح، فلترة سهلة، ومشاركة مباشرة.</p>
+</section>
+
+<div class="search-wrap">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="ابحث عن وظيفة، شركة، أو كلمة مفتاحية...">
+    <div class="filters-row">
+      <select id="categoryFilter"><option value="">كل المجالات</option></select>
+      <select id="locationFilter"><option value="">كل المحافظات</option></select>
+      <button class="btn-search" onclick="render()">بحث</button>
+      <select id="typeFilter">
+        <option value="">كل الأنواع</option>
+        <option value="حكومي">حكومي</option>
+        <option value="خاص">خاص</option>
+      </select>
     </div>
-  </header>
+  </div>
+</div>
 
-  <section class="hero">
-    <div class="container">
-      <span class="badge">منصة مجانية بالكامل</span>
-      <h1>اعثر على وظيفتك التالية في سوريا</h1>
-      <p>إعلانات حكومية وخاصة بمصدر واضح، فلترة سهلة، ومشاركة مباشرة.</p>
+<main>
+  <div class="section-title">
+    <h3>أحدث الإعلانات</h3>
+    <span class="count" id="resultCount"></span>
+  </div>
+  <div class="cards" id="cardsContainer"></div>
+  <div class="empty" id="emptyState" style="display:none;">لا توجد نتائج مطابقة حالياً</div>
+
+  <div class="publish" id="publish">
+    <h3>لأصحاب الشركات والمكاتب</h3>
+    <p>أرسل تفاصيل الوظيفة للمراجعة. سيتم نشر الإعلان بعد التحقق من البيانات والمصدر.</p>
+    <ul>
+      <li>المصدر إلزامي لحماية الباحثين</li>
+      <li>إمكانية تحديد النوع (حكومي / خاص)</li>
+      <li>مراجعة دقيقة قبل النشر</li>
+    </ul>
+    <button class="btn-primary" style="width:100%;padding:13px;border-radius:12px;border:none;font-weight:bold;cursor:pointer;" onclick="openModal()">انشر وظيفة الآن</button>
+  </div>
+</main>
+
+<button class="cta" onclick="openModal()">+ انشر وظيفة</button>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2>نشر طلب توظيف</h2>
+    <input type="text" id="mTitle" placeholder="المسمى الوظيفي">
+    <input type="text" id="mCompany" placeholder="اسم الشركة / الجهة">
+    <input type="text" id="mLocation" placeholder="المحافظة">
+    <input type="text" id="mSource" placeholder="رابط المصدر (إلزامي)">
+    <textarea id="mBody" placeholder="تفاصيل الوظيفة والشروط..."></textarea>
+    <input type="text" id="mContact" placeholder="رقم للتواصل">
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn-primary" onclick="submitAd()">إرسال للمراجعة</button>
     </div>
-  </section>
+  </div>
+</div>
 
-  <section class="filters-section">
-    <div class="container">
-      <div class="filters-box">
-        <div class="input-group">
-          <input type="text" id="searchInput" placeholder="ابحث عن وظيفة، شركة، أو كلمة مفتاحية...">
-        </div>
-        <div class="filters-row">
-          <select id="governorateFilter">
-            <option value="">كل المحافظات</option>
-          </select>
-          <select id="fieldFilter">
-            <option value="">كل المجالات</option>
-          </select>
-          <select id="typeFilter">
-            <option value="">كل الأنواع</option>
-            <option value="حكومي">حكومي</option>
-            <option value="خاص">خاص</option>
-          </select>
-          <button class="btn btn-primary" onclick="applyFilters()">بحث</button>
-        </div>
-      </div>
-    </div>
-  </section>
+<footer>
+  منصة مستقلة غير حكومية، تجمع الإعلانات من مصادرها الرسمية. © 2026 وظائف سوريا.
+</footer>
 
-  <main class="container" id="jobs">
-    <div class="results-header">
-      <h2>أحدث الإعلانات</h2>
-      <span id="resultsCount" class="results-count">0 إعلان</span>
-    </div>
-    
-    <div class="jobs-grid" id="jobsGrid"></div>
-  </main>
-
-  <section class="publish-section" id="publish">
-    <div class="container">
-      <div class="publish-box">
-        <div class="publish-info">
-          <h2>لأصحاب الشركات والمكاتب</h2>
-          <p>أرسل تفاصيل الوظيفة للمراجعة. سيتم نشر الإعلان بعد التحقق من البيانات والمصدر.</p>
-          <ul class="features-list">
-            <li>✓ المصدر إلزامي لحماية الباحثين</li>
-            <li>✓ إمكانية تحديد النوع (حكومي/خاص)</li>
-            <li>✓ مراجعة دقيقة قبل النشر</li>
-          </ul>
-        </div>
-        
-        <form id="publishForm" class="publish-form">
-          <div class="form-group">
-            <label for="title">المسمى الوظيفي</label>
-            <input type="text" id="title" name="title" required placeholder="مثال: مهندس برمجيات">
-          </div>
-          <div class="form-group">
-            <label for="company">اسم الشركة / الجهة</label>
-            <input type="text" id="company" name="company" required placeholder="مثال: شركة تقنية">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="governorate">المحافظة</label>
-              <input type="text" id="governorate" name="governorate" required placeholder="مثال: دمشق">
-            </div>
-            <div class="form-group">
-              <label for="field">المجال</label>
-              <input type="text" id="field" name="field" required placeholder="مثال: تقنية المعلومات">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="deadline">آخر موعد للتقديم</label>
-              <input type="date" id="deadline" name="deadline" required>
-            </div>
-            <div class="form-group">
-              <label for="source">رابط المصدر (اختياري)</label>
-              <input type="url" id="source" name="source" placeholder="https://...">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="description">تفاصيل الوظيفة</label>
-            <textarea id="description" name="description" rows="4" required placeholder="وصف المهام، الشروط، وطريقة التقديم..."></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">إرسال الطلب للمراجعة</button>
-        </form>
-      </div>
-    </div>
-  </section>
-
-  <footer class="site-footer">
-    <div class="container">
-      <p>© 2026 وظائف سوريا. جميع الحقوق محفوظة.</p>
-      <p class="footer-note">منصة مستقلة غير حكومية، تجمع الإعلانات من مصادرها الرسمية.</p>
-    </div>
-  </footer>
-
-  <div id="toast" class="toast"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/app.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
