@@ -3,37 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>نسخ أمر SQL</title>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#173b31">
+  <title>إعداد قاعدة البيانات | وظائف سوريا</title>
   <style>
-    body { font-family: Tahoma, sans-serif; margin: 0; padding: 24px; background: #111; color: #fff; }
-    h1 { font-size: 22px; }
-    p { color: #ddd; line-height: 1.8; }
-    textarea { width: 100%; min-height: 180px; padding: 14px; border-radius: 12px; border: 0; font-size: 16px; direction: ltr; text-align: left; }
-    button { width: 100%; margin-top: 14px; padding: 16px; border: 0; border-radius: 12px; background: #0F6E52; color: #fff; font-size: 20px; font-weight: bold; }
-    #msg { margin-top: 12px; min-height: 24px; color: #2EBE8A; font-weight: bold; text-align: center; }
+    :root{font-family:Tahoma,"Segoe UI",system-ui,sans-serif;color:#202923;background:#f5f4ef}*{box-sizing:border-box}body{max-width:680px;margin:0 auto;padding:24px 18px 60px;line-height:1.8}main{margin-top:24px;padding:24px;border:1px solid #e2e3dc;border-radius:16px;background:white}h1{font-size:23px;color:#173b31;margin:0 0 12px}p,li{font-size:14px;color:#68736c}strong{color:#202923}.warning{margin:18px 0;padding:14px;border-radius:10px;background:#fff2ef;border:1px solid #eed4ce;color:#8a3f35;font-size:13px}.button{display:inline-block;margin-top:12px;padding:12px 18px;border-radius:10px;background:#173b31;color:#fff;text-decoration:none;font-size:14px;font-weight:bold}.back{display:inline-block;margin-top:18px;color:#245446;font-size:13px;font-weight:bold;text-decoration:none}code{direction:ltr;unicode-bidi:embed}
   </style>
 </head>
-<body>
-  <h1>انسخ أمر SQL</h1>
-  <p>اضغط الزر الأخضر لنسخ النص، ثم الصقه في Supabase → SQL Editor → Run.</p>
-  <textarea id="sql" readonly>alter table public.job_submissions disable row level security;
-grant usage on schema public to anon, authenticated;
-grant select, insert, update, delete on table public.job_submissions to anon, authenticated;</textarea>
-  <button type="button" onclick="copySql()">نسخ النص</button>
-  <div id="msg"></div>
-  <script>
-    async function copySql() {
-      const text = document.getElementById('sql').value;
-      try {
-        await navigator.clipboard.writeText(text);
-        document.getElementById('msg').textContent = 'تم النسخ. الصقه الآن في Supabase.';
-      } catch {
-        document.getElementById('sql').focus();
-        document.getElementById('sql').select();
-        document.execCommand('copy');
-        document.getElementById('msg').textContent = 'إذا لم يُنسخ، اضغط مطولاً على النص واختر نسخ.';
-      }
-    }
-  </script>
-</body>
-</html>
+<body><main>
+  <h1>إعداد قاعدة البيانات</h1>
+  <p>لتفعيل أقسام وظائف سوريا الجديدة بأمان، نزّل ملف الترحيل وافحصه، ثم شغّله من <strong>Supabase Dashboard → SQL Editor</strong> على قاعدة المشروع.</p>
+  <div class="warning"><strong>تنبيه أمني:</strong> لا تعطّل Row Level Security (RLS) على جدول الإعلانات. تعطيلها يتيح الوصول غير المصرّح به إلى الطلبات وقد يسمح بتعديلها أو حذفها.</div>
+  <ol><li>شغّل ملف الترحيل <code>migration-listing-types.sql</code> مرة واحدة.</li><li>أنشئ حساب المشرف في Supabase Authentication، ثم أضف UUID الخاص به إلى جدول <code>admin_users</code> كما توضح تعليمات النشر.</li><li>لا تشارك مفاتيح الإدارة أو بيانات اعتماد Supabase في هذه الصفحة.</li></ol>
+  <a class="button" href="supabase/migration-listing-types.sql" download>تنزيل ملف ترحيل قاعدة البيانات</a>
+  <br><a class="back" href="supabase/DEPLOYMENT.md">قراءة خطوات الإعداد</a>
+</main></body></html>

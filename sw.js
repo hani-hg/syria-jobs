@@ -1,4 +1,4 @@
-const CACHE = 'syria-jobs-v2';
+const CACHE = 'syria-jobs-v3';
 const ASSETS = ['/', '/index.html', '/css/style.css', '/js/app.js', '/favicon.svg', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -10,12 +10,17 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
   event.respondWith(
-    fetch(event.request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {});
+    fetch(request).then((response) => {
+      if (response.ok && request.mode !== 'navigate') {
+        const copy = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+      }
       return response;
-    }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+    }).catch(() => caches.match(request).then((cached) => cached || (request.mode === 'navigate' ? caches.match('/index.html') : Response.error())))
   );
 });

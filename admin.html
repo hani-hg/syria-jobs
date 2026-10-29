@@ -1,92 +1,14 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1b2838">
-  <meta name="robots" content="noindex,nofollow">
-  <title>لوحة التحكم | وظائف سوريا</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/admin.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body class="admin-body">
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" href="index.html">
-        <span class="brand-mark">س</span>
-        <span><strong>وظائف سوريا</strong><small>لوحة التحكم</small></span>
-      </a>
-      <button class="btn btn-ghost admin-signout" id="signOutBtn" type="button" hidden>تسجيل الخروج</button>
-    </div>
-  </header>
-  <main class="container admin-main">
-    <section class="admin-login" id="loginPanel" hidden></section>
-    <section id="dashboardPanel">
-      <div class="admin-heading">
-        <div>
-          <p class="eyebrow">إدارة المحتوى</p>
-          <h1>طلبات التوظيف</h1>
-          <p id="adminEmail">افتح هذه الصفحة للمراجعة والاعتماد</p>
-        </div>
-        <div class="admin-heading-actions">
-          <button class="btn btn-accent" id="addJobBtn" type="button">إضافة وظيفة</button>
-          <button class="btn btn-outline-dark admin-signout" id="signOutBtnAlt" type="button">تسجيل الخروج</button>
-        </div>
-      </div>
-      <div class="admin-stats">
-        <div><strong id="pendingCount">0</strong><span>قيد المراجعة</span></div>
-        <div><strong id="approvedCount">0</strong><span>معتمدة</span></div>
-        <div><strong id="rejectedCount">0</strong><span>مرفوضة</span></div>
-      </div>
-      <div class="admin-toolbar">
-        <div class="admin-tabs" role="tablist">
-          <button class="active" data-status="pending" type="button">قيد المراجعة</button>
-          <button data-status="approved" type="button">معتمدة</button>
-          <button data-status="rejected" type="button">مرفوضة</button>
-          <button data-status="all" type="button">الكل</button>
-        </div>
-        <button class="btn btn-outline-dark" id="refreshBtn" type="button">تحديث</button>
-      </div>
-      <div id="adminMessage" class="admin-message"></div>
-      <div id="submissionsList" class="submissions-list"></div>
-    </section>
-  </main>
-
-  <div class="job-panel" id="editorPanel" hidden>
-    <div class="job-panel-backdrop" id="editorBackdrop"></div>
-    <aside class="job-panel-card" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
-      <div class="job-panel-head">
-        <h2 id="editorTitle">إضافة وظيفة</h2>
-        <button class="close-panel" id="closeEditor" type="button" aria-label="إغلاق">×</button>
-      </div>
-      <form id="editorForm" class="publish-form admin-editor-form">
-        <input type="hidden" name="id">
-        <label>المسمى الوظيفي<input name="title" required minlength="2" maxlength="160"></label>
-        <label>اسم الجهة<input name="company" required minlength="2" maxlength="160"></label>
-        <div class="form-row">
-          <label>المحافظة<select name="governorate" id="editorGovernorate" required></select></label>
-          <label>المجال<select name="field" id="editorField" required></select></label>
-        </div>
-        <div class="form-row">
-          <label>النوع<select name="type" required><option value="خاص">خاص</option><option value="حكومي">حكومي</option></select></label>
-          <label>الحالة<select name="status"><option value="pending">قيد المراجعة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option></select></label>
-        </div>
-        <div class="form-row">
-          <label>آخر موعد<input name="deadline" type="date" required></label>
-          <label>التواصل (اختياري)<input name="contact" maxlength="160"></label>
-        </div>
-        <label>رابط المصدر<input name="source" type="url" required dir="ltr"></label>
-        <label>التفاصيل<textarea name="description" rows="5" required minlength="10" maxlength="5000"></textarea></label>
-        <button class="btn btn-accent" type="submit">حفظ</button>
-      </form>
-    </aside>
-  </div>
-  <div id="toast" class="toast" role="status"></div>
-  <script src="js/admin.js"></script>
-</body>
-</html>
+<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#173b31"><title>إدارة الموقع | وظائف سوريا</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/admin.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head>
+<body class="admin-body"><header class="site-header"><a class="brand" href="index.html"><span class="brand-mark">و</span><span><strong>وظائف سوريا</strong><small>إدارة الإعلانات</small></span></a><button class="btn btn-outline" id="signOutBtn" type="button" hidden>تسجيل الخروج</button></header>
+<main class="admin-main">
+  <section class="admin-login" id="loginPanel"><span class="eyebrow">دخول المشرفين</span><h1>إدارة الموقع</h1><p>سجّل الدخول بحساب مشرف معتمد لمراجعة الإعلانات.</p><form id="loginForm"><label>البريد الإلكتروني<input id="loginEmail" type="email" autocomplete="username" required></label><label>كلمة المرور<input id="loginPassword" type="password" autocomplete="current-password" required></label><button class="btn btn-primary" type="submit">تسجيل الدخول</button></form><p class="admin-message" id="loginMessage" role="status"></p></section>
+  <section id="dashboardPanel" hidden>
+    <div class="admin-heading"><div><span class="eyebrow">مراجعة المحتوى</span><h1>طلبات الإعلانات</h1><p id="adminEmail">تظهر هنا الطلبات التي تحتاج إلى مراجعة.</p></div><div class="admin-heading-actions"><button class="btn btn-outline" id="addJobBtn" type="button">إضافة إعلان</button><button class="btn btn-outline" id="refreshBtn" type="button">تحديث</button></div></div>
+    <div class="admin-stats"><div><strong id="pendingCount">0</strong><span>قيد المراجعة</span></div><div><strong id="approvedCount">0</strong><span>منشورة</span></div><div><strong id="rejectedCount">0</strong><span>مرفوضة</span></div></div>
+    <div class="admin-toolbar"><div class="admin-tabs" role="tablist"><button class="active" data-status="pending" type="button">قيد المراجعة</button><button data-status="approved" type="button">منشورة</button><button data-status="rejected" type="button">مرفوضة</button><button data-status="all" type="button">الكل</button></div></div>
+    <p class="admin-message" id="adminMessage" role="status"></p><div class="submissions-list" id="submissionsList"></div>
+  </section>
+</main>
+<div class="editor-backdrop" id="editorBackdrop" hidden><section class="editor-card" role="dialog" aria-modal="true" aria-labelledby="editorTitle"><div class="modal-head"><div><span class="eyebrow">معلومات الإعلان</span><h2 id="editorTitle">إضافة إعلان</h2></div><button class="modal-close" id="closeEditor" type="button" aria-label="إغلاق">×</button></div><form id="editorForm" class="admin-editor-form"><input type="hidden" name="id"><label class="field-label">نوع الإعلان<select name="listing_type"><option value="job">وظيفة شاغرة</option><option value="seeker">مطلوب وظيفة</option></select></label><div class="field-row"><label class="field-label">القطاع<select name="type"><option value="حكومي">حكومي</option><option value="خاص">قطاع خاص</option></select></label><label class="field-label">الحالة<select name="status"><option value="pending">قيد المراجعة</option><option value="approved">منشورة</option><option value="rejected">مرفوضة</option></select></label></div><label class="field-label">المسمى / المهنة<input name="title" required minlength="2" maxlength="160"></label><label class="field-label">الجهة<input name="company" maxlength="160"></label><div class="field-row"><label class="field-label">المحافظة<select name="governorate" id="editorGovernorate" required></select></label><label class="field-label">المجال<select name="field" id="editorField" required></select></label></div><div class="field-row"><label class="field-label">آخر موعد / انتهاء الإعلان<input name="deadline" type="date" required></label><label class="field-label">الخبرة<input name="experience" maxlength="120"></label></div><label class="field-label">طريقة العمل<input name="work_arrangement" maxlength="80"></label><label class="field-label">رابط المصدر<input name="source" type="url" dir="ltr"></label><label class="field-label">وسيلة التواصل<input name="contact" maxlength="160"></label><label class="field-label">التفاصيل<textarea name="description" rows="5" minlength="10" maxlength="5000" required></textarea></label><button class="btn btn-primary" type="submit">حفظ الإعلان</button></form></section></div>
+<div id="toast" class="toast" role="status"></div><script src="js/admin.js"></script></body></html>

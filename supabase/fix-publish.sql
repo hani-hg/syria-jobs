@@ -1,3 +1,5 @@
-alter table public.job_submissions disable row level security;
-grant usage on schema public to anon, authenticated;
-grant select, insert, update, delete on table public.job_submissions to anon, authenticated;
+-- تم إيقاف هذا الإصلاح القديم لأنه كان يعطّل Row Level Security.
+-- لا تشغّل أوامر لتعطيل RLS على جدول job_submissions.
+-- لتحديث قاعدة قائمة، نفّذ migration-listing-types.sql من Supabase SQL Editor.
+-- يمنح الترحيل العامة قراءة الإعلانات المعتمدة وغير المنتهية وإرسال pending فقط،
+-- ويحصر القراءة الإدارية والتعديل والحذف على مستخدمين موجودين في admin_users.
