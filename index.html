@@ -61,12 +61,22 @@
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h2>نشر طلب توظيف</h2>
-    <input type="text" id="mTitle" placeholder="المسمى الوظيفي">
-    <input type="text" id="mCompany" placeholder="اسم الشركة / الجهة">
-    <input type="text" id="mLocation" placeholder="المحافظة">
-    <input type="text" id="mSource" placeholder="رابط المصدر (إلزامي)">
-    <textarea id="mBody" placeholder="تفاصيل الوظيفة والشروط..."></textarea>
-    <input type="text" id="mContact" placeholder="رقم للتواصل">
+    <input type="text" id="mTitle" placeholder="المسمى الوظيفي" minlength="2" maxlength="160">
+    <input type="text" id="mCompany" placeholder="اسم الشركة / الجهة" minlength="2" maxlength="160">
+    <select id="mLocation">
+      <option value="">المحافظة</option>
+    </select>
+    <select id="mField">
+      <option value="">المجال</option>
+    </select>
+    <select id="mType">
+      <option value="خاص">خاص</option>
+      <option value="حكومي">حكومي</option>
+    </select>
+    <input type="date" id="mDeadline">
+    <input type="url" id="mSource" placeholder="رابط المصدر (https://...)" dir="ltr">
+    <textarea id="mBody" placeholder="تفاصيل الوظيفة والشروط..." minlength="10"></textarea>
+    <input type="text" id="mContact" placeholder="رقم للتواصل أو بريد (اختياري)">
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeModal()">إلغاء</button>
       <button class="btn-primary" onclick="submitAd()">إرسال للمراجعة</button>
