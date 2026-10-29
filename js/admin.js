@@ -27,22 +27,11 @@ function showToast(message, error = false) {
   setTimeout(() => { toast.className = 'toast'; }, 4000);
 }
 
-async function isAdmin(user) {
-  const { data, error } = await client.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
-  return !error && Boolean(data);
-}
-
-async function startSession(session) {
-  currentUser = session.user;
-  if (!(await isAdmin(currentUser))) {
-    await client.auth.signOut();
-    showMessage('#loginMessage', 'هذا الحساب غير مخوّل للوصول إلى لوحة التحكم.', true);
-    return;
-  }
+async function openDashboard() {
   $('#loginPanel').hidden = true;
   $('#dashboardPanel').hidden = false;
-  $('#signOutBtn').hidden = false;
-  $('#adminEmail').textContent = currentUser.email || '';
+  $('#signOutBtn').hidden = true;
+  $('#signOutBtnAlt').hidden = true;
   await loadSubmissions();
 }
 
@@ -147,23 +136,9 @@ async function saveEditor(event) {
   }
 }
 
-$('#loginForm').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const button = event.currentTarget.querySelector('button');
-  button.disabled = true;
-  showMessage('#loginMessage', 'جارٍ تسجيل الدخول...');
-  const { data, error } = await client.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
-  if (error) showMessage('#loginMessage', 'بيانات الدخول غير صحيحة أو الحساب غير مفعّل.', true);
-  else await startSession(data.session);
-  button.disabled = false;
-});
-$('#togglePassword').addEventListener('click', () => {
-  const input = $('#password');
-  const visible = input.type === 'text';
-  input.type = visible ? 'password' : 'text';
-  $('#togglePassword').textContent = visible ? 'إظهار' : 'إخفاء';
-  $('#togglePassword').setAttribute('aria-label', visible ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور');
-});
+if ($('#loginForm')) {
+  $('#loginForm').addEventListener('submit', (event) => { event.preventDefault(); openDashboard(); });
+}
 $('#submissionsList').addEventListener('click', (event) => {
   const button = event.target.closest('button[data-action]');
   if (!button) return;
@@ -183,9 +158,6 @@ $('#closeEditor').addEventListener('click', closeEditor);
 $('#editorBackdrop').addEventListener('click', closeEditor);
 $('#editorForm').addEventListener('submit', saveEditor);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeEditor(); });
-async function signOut() { await client.auth.signOut(); window.location.reload(); }
-$('#signOutBtn').addEventListener('click', signOut);
-$('#signOutBtnAlt').addEventListener('click', signOut);
 fillSelect($('#editorGovernorate'), GOVERNORATES, 'اختر المحافظة');
 fillSelect($('#editorField'), FIELDS, 'اختر المجال');
-client.auth.getSession().then(({ data }) => { if (data.session) startSession(data.session); });
+openDashboard();

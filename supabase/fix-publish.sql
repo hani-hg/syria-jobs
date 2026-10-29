@@ -1,6 +1,5 @@
--- نفّذ هذا الملف مرة واحدة من Supabase: SQL Editor ثم Run
 grant usage on schema public to anon, authenticated;
-grant select, insert on table public.job_submissions to anon, authenticated;
+grant select, insert, update, delete on table public.job_submissions to anon, authenticated;
 
 alter table public.job_submissions add column if not exists contact text;
 alter table public.job_submissions add column if not exists field text;
@@ -19,4 +18,17 @@ drop policy if exists "public can read approved jobs" on public.job_submissions;
 create policy "public can read approved jobs"
   on public.job_submissions for select
   to anon, authenticated
-  using (status = 'approved' or public.is_admin());
+  using (true);
+
+drop policy if exists "admins can update jobs" on public.job_submissions;
+create policy "admins can update jobs"
+  on public.job_submissions for update
+  to anon, authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "admins can delete jobs" on public.job_submissions;
+create policy "admins can delete jobs"
+  on public.job_submissions for delete
+  to anon, authenticated
+  using (true);

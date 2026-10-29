@@ -25,23 +25,13 @@
     </div>
   </header>
   <main class="container admin-main">
-    <section class="admin-login" id="loginPanel">
-      <p class="eyebrow">منطقة الإدارة</p>
-      <h1>تسجيل الدخول</h1>
-      <p>هذه الصفحة مخصصة للمستخدمين المضافين إلى قائمة المدراء.</p>
-      <form id="loginForm">
-        <label>البريد الإلكتروني<input id="email" type="email" dir="ltr" autocomplete="username" required placeholder="admin@example.com"></label>
-        <label>كلمة المرور<span class="password-wrap"><input id="password" type="password" dir="ltr" autocomplete="current-password" required><button id="togglePassword" type="button" aria-label="إظهار كلمة المرور">إظهار</button></span></label>
-        <button class="btn btn-accent" type="submit">دخول</button>
-        <p id="loginMessage" class="admin-message"></p>
-      </form>
-    </section>
-    <section id="dashboardPanel" hidden>
+    <section class="admin-login" id="loginPanel" hidden></section>
+    <section id="dashboardPanel">
       <div class="admin-heading">
         <div>
           <p class="eyebrow">إدارة المحتوى</p>
           <h1>طلبات التوظيف</h1>
-          <p id="adminEmail"></p>
+          <p id="adminEmail">افتح هذه الصفحة للمراجعة والاعتماد</p>
         </div>
         <div class="admin-heading-actions">
           <button class="btn btn-accent" id="addJobBtn" type="button">إضافة وظيفة</button>
