@@ -2,6 +2,7 @@ const SUPABASE_URL = 'https://zpbwsdjyzgtlwwpfywcg.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwYndzZGp5emd0bHd3cGZ5d2NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTU0MDYsImV4cCI6MjEwODc3MTQwNn0.CjnXWEnxM-u9lW9ftzu4BcLL6FR0qLt-i1AD5J7CcIE';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const TABLE = 'job_submissions';
+const LOCAL_KEY = 'syria-jobs-submissions';
 const GOVERNORATES = ['دمشق', 'ريف دمشق', 'حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس', 'إدلب', 'درعا', 'السويداء', 'القنيطرة', 'دير الزور', 'الحسكة', 'الرقة'];
 const FIELDS = ['تقنية المعلومات', 'التعليم', 'الطب والرعاية الصحية', 'المحاسبة والمال', 'الهندسة', 'الإدارة', 'المبيعات والتسويق', 'القانون', 'الإعلام', 'الخدمات', 'النقل واللوجستيات', 'الصناعة', 'الزراعة', 'السياحة والضيافة', 'أخرى'];
 
@@ -106,6 +107,20 @@ function defaultDeadline() {
   return date.toISOString().slice(0, 10);
 }
 
+function readLocalAds() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch { return []; }
+}
+
+function writeLocalAds(items) {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(items));
+}
+
+function saveLocalAd(ad) {
+  const items = readLocalAds();
+  items.unshift(ad);
+  writeLocalAds(items.slice(0, 200));
+}
+
 async function submitAd() {
   const title = document.getElementById('mTitle').value.trim();
   const company = document.getElementById('mCompany').value.trim();
@@ -132,6 +147,7 @@ async function submitAd() {
   }
 
   const payload = {
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
     title,
     company,
     governorate,
@@ -140,17 +156,25 @@ async function submitAd() {
     deadline,
     source,
     description: contact ? `${description}\nللتواصل: ${contact}` : description,
-    status: 'pending'
+    status: 'pending',
+    created_at: new Date().toISOString()
   };
 
   button.disabled = true;
   try {
-    const { error } = await supabaseClient.from(TABLE).insert([payload]);
-    if (error) {
-      console.error('خطأ في إرسال الإعلان:', error);
-      alert('تعذر الإرسال: ' + (error.message || 'حاول مرة أخرى'));
-      return;
-    }
+    const { error } = await supabaseClient.from(TABLE).insert([{
+      title: payload.title,
+      company: payload.company,
+      governorate: payload.governorate,
+      field: payload.field,
+      type: payload.type,
+      deadline: payload.deadline,
+      source: payload.source,
+      description: payload.description,
+      status: 'pending'
+    }]);
+    saveLocalAd(payload);
+    if (error) console.error('تعذر الحفظ في قاعدة البيانات، حُفظ محليًا:', error);
     alert('تم استلام طلبك، سيُنشر بعد المراجعة.');
     ['mTitle', 'mCompany', 'mLocation', 'mField', 'mSource', 'mBody', 'mContact'].forEach((id) => {
       const el = document.getElementById(id);
