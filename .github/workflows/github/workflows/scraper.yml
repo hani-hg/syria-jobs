@@ -1,0 +1,24 @@
+name: Syria Jobs Scraper
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # يعمل كل 6 ساعات تلقائياً
+  workflow_dispatch: # يسمح لك بتشغيله يدوياً للتجربة
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 supabase
+      - name: Run bot
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python bot.py
