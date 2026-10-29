@@ -1,116 +1,114 @@
-// --- إعدادات Supabase ---
-const SUPABASE_URL = 'https://zpbwsdjyzgtlwwpfywcg.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwYndzZGp5emd0bHd3cGZ5d2NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTU0MDYsImV4cCI6MjEwODc3MTQwNn0.CjnXWEnxM-u9lW9ftzu4BcLL6FR0qLt-i1AD5J7CcIE';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const sampleJobs = [
-  { id: 'job-1', title: 'مهندس برمجيات', company: 'شركة تقنية سورية', governorate: 'دمشق', field: 'تقنية المعلومات', type: 'خاص', deadline: '2026-12-20', description: 'تطوير وصيانة تطبيقات الويب والعمل ضمن فريق تقني متكامل.', source: 'https://www.linkedin.com/jobs/' },
-  { id: 'job-2', title: 'مدرس لغة إنكليزية', company: 'مديرية التربية', governorate: 'حلب', field: 'التعليم', type: 'حكومي', deadline: '2026-11-30', description: 'فرصة تدريس للمدارس العامة وفق الشروط المعلنة من الجهة الرسمية.', source: 'https://moed.gov.sy/' },
-  { id: 'job-3', title: 'محاسب', company: 'مؤسسة تجارية', governorate: 'حمص', field: 'المحاسبة والمال', type: 'خاص', deadline: '2026-12-10', description: 'إدارة الحسابات وإعداد التقارير المالية ومتابعة الفواتير.', source: 'https://example.com/jobs/accountant' },
-  { id: 'job-4', title: 'طبيب مقيم', company: 'وزارة الصحة', governorate: 'اللاذقية', field: 'الطب والرعاية الصحية', type: 'حكومي', deadline: '2026-12-05', description: 'شواغر للأطباء المقيمين بحسب الاختصاصات والأماكن المتاحة.', source: 'https://moh.gov.sy/' }
-];
-
-let allJobs = [];
-let visibleJobs = [];
-
-const $ = (selector) => document.querySelector(selector);
-const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
-const isActive = (job) => job.deadline && new Date(`${job.deadline}T23:59:59`) >= new Date();
-const formatDate = (date) => new Intl.DateTimeFormat('ar-SY', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(`${date}T12:00:00`));
-
-async function loadJobs() {
-  try {
-    const { data, error } = await supabaseClient.from('jobs').select('*').eq('status', 'published').order('created_at', { ascending: false });
-    if (error) throw error;
-    const activeDbJobs = (data || []).filter(isActive);
-    allJobs = [...sampleJobs, ...activeDbJobs].filter(isActive);
-    populateFilters();
-    applyFilters();
-  } catch (error) {
-    console.error('Error loading jobs:', error);
-    showToast('حدث خطأ في تحميل الإعلانات', 'error');
-  }
+:root {
+  --primary: #007A3D; /* الأخضر السوري */
+  --primary-dark: #005c2e;
+  --danger: #CE1126; /* الأحمر السوري */
+  --black: #111111;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --bg-body: #f8f9fa;
+  --bg-card: #ffffff;
+  --border: #e5e7eb;
+  --radius: 12px;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
-function populateFilters() {
-  const values = (key) => [...new Set(allJobs.map((job) => job[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar'));
-  $('#governorateFilter').innerHTML = '<option value="">كل المحافظات</option>' + values('governorate').map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-  $('#fieldFilter').innerHTML = '<option value="">كل المجالات</option>' + values('field').map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Tajawal', sans-serif;
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  line-height: 1.6;
 }
 
-function applyFilters() {
-  const search = $('#searchInput').value.trim().toLowerCase();
-  const governorate = $('#governorateFilter').value;
-  const field = $('#fieldFilter').value;
-  const type = $('#typeFilter').value;
-  visibleJobs = allJobs.filter((job) => {
-    const haystack = `${job.title} ${job.company} ${job.description}`.toLowerCase();
-    return (!search || haystack.includes(search)) && (!governorate || job.governorate === governorate) && (!field || job.field === field) && (!type || job.type === type);
-  });
-  renderJobs();
+.container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+/* Header */
+.site-header { background: var(--bg-card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+.header-content { display: flex; justify-content: space-between; align-items: center; height: 70px; }
+.logo { text-decoration: none; font-size: 1.5rem; font-weight: 800; display: flex; gap: 5px; }
+.logo-mark { color: var(--primary); }
+.logo-text { color: var(--black); }
+.main-nav { display: flex; align-items: center; gap: 20px; }
+.main-nav a { text-decoration: none; color: var(--text-main); font-weight: 500; }
+.main-nav a:hover { color: var(--primary); }
+
+/* Buttons */
+.btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-family: inherit; font-weight: 700; cursor: pointer; border: none; text-align: center; transition: all 0.2s; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; }
+.btn-outline:hover { background: var(--primary); color: white; }
+.btn-block { width: 100%; }
+
+/* Hero */
+.hero { background: var(--black); color: white; text-align: center; padding: 60px 0; }
+.hero .badge { background: rgba(255, 255, 255, 0.1); color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-bottom: 20px; display: inline-block; }
+.hero h1 { font-size: 2.5rem; margin-bottom: 15px; font-weight: 800; }
+.hero p { color: #ccc; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+
+/* Filters */
+.filters-section { margin-top: -30px; position: relative; z-index: 10; }
+.filters-box { background: var(--bg-card); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); }
+.input-group { margin-bottom: 15px; }
+.input-group input { width: 100%; padding: 15px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 1rem; }
+.filters-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+.filters-row select { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; background: #fff; cursor: pointer; }
+
+/* Jobs Grid */
+.results-header { display: flex; justify-content: space-between; align-items: center; margin: 40px 0 20px; }
+.results-header h2 { font-size: 1.5rem; color: var(--black); }
+.results-count { color: var(--text-muted); font-weight: 500; }
+.jobs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 60px; }
+
+/* Job Card */
+.job-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+.job-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+.job-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.job-type { font-size: 0.8rem; padding: 4px 10px; border-radius: 4px; font-weight: 700; }
+.job-type.government { background: #e0f2fe; color: #0369a1; }
+.job-type.private { background: #fef2f2; color: var(--danger); }
+.job-date { font-size: 0.85rem; color: var(--text-muted); }
+.job-card h3 { font-size: 1.2rem; margin-bottom: 5px; color: var(--black); }
+.job-card .company { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 15px; }
+.job-meta { display: flex; gap: 15px; font-size: 0.9rem; color: var(--text-main); margin-bottom: 15px; }
+.job-description { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 20px; flex-grow: 1; }
+.job-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px; }
+.job-actions a { text-decoration: none; color: var(--primary); font-weight: 700; font-size: 0.95rem; }
+.btn-whatsapp { background: transparent; border: none; cursor: pointer; color: #25D366; font-weight: 700; font-family: inherit; font-size: 0.95rem; display: flex; align-items: center; gap: 5px; }
+
+.empty-state { grid-column: 1 / -1; text-align: center; padding: 40px; background: white; border-radius: var(--radius); }
+.empty-state strong { display: block; font-size: 1.2rem; margin-bottom: 5px; }
+.empty-state span { color: var(--text-muted); }
+
+/* Publish Section */
+.publish-section { background: #fff; padding: 60px 0; border-top: 1px solid var(--border); }
+.publish-box { display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; align-items: start; }
+.publish-info h2 { font-size: 2rem; color: var(--black); margin-bottom: 15px; }
+.publish-info p { color: var(--text-muted); margin-bottom: 20px; }
+.features-list { list-style: none; }
+.features-list li { margin-bottom: 10px; color: var(--text-main); }
+.publish-form { background: var(--bg-body); padding: 30px; border-radius: var(--radius); border: 1px solid var(--border); }
+.form-group { margin-bottom: 15px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.9rem; color: var(--black); }
+.form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; background: #fff; }
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+
+/* Footer */
+.site-footer { background: var(--black); color: #999; text-align: center; padding: 30px 0; font-size: 0.9rem; }
+.footer-note { margin-top: 5px; font-size: 0.8rem; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--primary); color: white; padding: 15px 30px; border-radius: 50px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transition: all 0.3s ease; z-index: 1000; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast.error { background: var(--danger); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-nav a:not(.btn) { display: none; }
+  .hero h1 { font-size: 2rem; }
+  .filters-row { grid-template-columns: 1fr 1fr; }
+  .publish-box { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
 }
-
-function renderJobs() {
-  $('#resultsCount').textContent = `${visibleJobs.length} إعلان`;
-  if (!visibleJobs.length) {
-    $('#jobsGrid').innerHTML = '<div class="empty-state"><strong>لا توجد نتائج مطابقة</strong><span>جرّب تغيير الفلاتر أو كلمة البحث.</span></div>';
-    return;
-  }
-  $('#jobsGrid').innerHTML = visibleJobs.map((job) => `
-    <article class="job-card">
-      <div class="job-top">
-        <span class="job-type ${job.type === 'حكومي' ? 'government' : 'private'}">${escapeHtml(job.type)}</span>
-        <span class="job-date">حتى ${formatDate(job.deadline)}</span>
-      </div>
-      <h3>${escapeHtml(job.title)}</h3>
-      <p class="company">${escapeHtml(job.company)}</p>
-      <div class="job-meta">
-        <span>⌖ ${escapeHtml(job.governorate)}</span>
-        <span>◈ ${escapeHtml(job.field)}</span>
-      </div>
-      <p class="job-description">${escapeHtml(job.description)}</p>
-      <div class="job-actions">
-        <a href="${escapeHtml(job.source)}" target="_blank" rel="noopener noreferrer">رابط المصدر &larr;</a>
-        <button class="btn-whatsapp" type="button" onclick="shareJob('${escapeHtml(job.id)}')">مشاركة</button>
-      </div>
-    </article>`).join('');
-}
-
-function shareJob(id) {
-  const job = allJobs.find((item) => item.id === id);
-  if (!job) return;
-  const url = new URL(window.location.href);
-  url.hash = 'jobs';
-  const text = `فرصة عمل عبر وظائف سوريا\n${job.title} - ${job.company}\nالمحافظة: ${job.governorate}\nآخر موعد: ${formatDate(job.deadline)}\n${url.toString()}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-}
-
-function showToast(message, type = 'success') {
-  const toast = $('#toast'); toast.textContent = message; toast.className = `toast show ${type}`;
-  window.setTimeout(() => { toast.className = 'toast'; }, 3500);
-}
-
-async function handlePublish(event) {
-  event.preventDefault();
-  const formData = new FormData(event.currentTarget);
-  const data = Object.fromEntries(formData.entries());
-
-  try {
-    const { error } = await supabaseClient.from('jobs').insert([{
-        title: data.title, company: data.company, governorate: data.governorate,
-        field: data.field, type: 'خاص', deadline: data.deadline,
-        description: data.description, source: data.source || '', status: 'pending'
-    }]);
-    if (error) throw error;
-    event.currentTarget.reset();
-    showToast('تم استلام الإعلان، وهو الآن قيد المراجعة.');
-  } catch (error) {
-    console.error('Error submitting job:', error);
-    showToast('حدث خطأ أثناء إرسال الإعلان', 'error');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  if($('#publishForm')) $('#publishForm').addEventListener('submit', handlePublish);
-  loadJobs();
-});
