@@ -3,23 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#123d2b">
+  <meta name="theme-color" content="#1b2838">
+  <meta name="robots" content="noindex,nofollow">
   <title>لوحة التحكم | وظائف سوريا</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="admin-body">
-  <header class="site-header"><div class="container header-inner"><a class="brand" href="index.html"><span class="brand-mark">س</span><span><strong>وظائف سوريا</strong><small>لوحة التحكم</small></span></a><button class="btn btn-outline admin-signout" id="signOutBtn" type="button" hidden>تسجيل الخروج</button></div></header>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">س</span>
+        <span><strong>وظائف سوريا</strong><small>لوحة التحكم</small></span>
+      </a>
+      <button class="btn btn-ghost admin-signout" id="signOutBtn" type="button" hidden>تسجيل الخروج</button>
+    </div>
+  </header>
   <main class="container admin-main">
-    <section class="admin-login" id="loginPanel"><p class="eyebrow">منطقة الإدارة</p><h1>تسجيل الدخول</h1><p>هذه الصفحة مخصصة للمستخدمين المضافين إلى قائمة المدراء.</p><form id="loginForm"><label>البريد الإلكتروني<input id="email" type="email" dir="ltr" autocomplete="username" required placeholder="admin@example.com"></label><label>كلمة المرور<span class="password-wrap"><input id="password" type="password" dir="ltr" autocomplete="current-password" required><button id="togglePassword" type="button" aria-label="إظهار كلمة المرور">إظهار</button></span></label><button class="btn btn-gold" type="submit">دخول</button><p id="loginMessage" class="admin-message"></p></form></section>
-    <section id="dashboardPanel" hidden><div class="admin-heading"><div><p class="eyebrow">إدارة المحتوى</p><h1>طلبات التوظيف</h1><p id="adminEmail"></p></div><button class="btn btn-outline admin-signout" id="signOutBtnAlt" type="button">تسجيل الخروج</button></div>
-      <div class="admin-stats"><div><strong id="pendingCount">0</strong><span>قيد المراجعة</span></div><div><strong id="approvedCount">0</strong><span>معتمدة</span></div><div><strong id="rejectedCount">0</strong><span>مرفوضة</span></div></div>
-      <div class="admin-toolbar"><div class="admin-tabs" role="tablist"><button class="active" data-status="pending" type="button">قيد المراجعة</button><button data-status="approved" type="button">معتمدة</button><button data-status="rejected" type="button">مرفوضة</button><button data-status="all" type="button">الكل</button></div><button class="btn btn-primary" id="refreshBtn" type="button">تحديث</button></div>
-      <div id="adminMessage" class="admin-message"></div><div id="submissionsList" class="submissions-list"></div>
+    <section class="admin-login" id="loginPanel">
+      <p class="eyebrow">منطقة الإدارة</p>
+      <h1>تسجيل الدخول</h1>
+      <p>هذه الصفحة مخصصة للمستخدمين المضافين إلى قائمة المدراء.</p>
+      <form id="loginForm">
+        <label>البريد الإلكتروني<input id="email" type="email" dir="ltr" autocomplete="username" required placeholder="admin@example.com"></label>
+        <label>كلمة المرور<span class="password-wrap"><input id="password" type="password" dir="ltr" autocomplete="current-password" required><button id="togglePassword" type="button" aria-label="إظهار كلمة المرور">إظهار</button></span></label>
+        <button class="btn btn-accent" type="submit">دخول</button>
+        <p id="loginMessage" class="admin-message"></p>
+      </form>
+    </section>
+    <section id="dashboardPanel" hidden>
+      <div class="admin-heading">
+        <div>
+          <p class="eyebrow">إدارة المحتوى</p>
+          <h1>طلبات التوظيف</h1>
+          <p id="adminEmail"></p>
+        </div>
+        <div class="admin-heading-actions">
+          <button class="btn btn-accent" id="addJobBtn" type="button">إضافة وظيفة</button>
+          <button class="btn btn-outline-dark admin-signout" id="signOutBtnAlt" type="button">تسجيل الخروج</button>
+        </div>
+      </div>
+      <div class="admin-stats">
+        <div><strong id="pendingCount">0</strong><span>قيد المراجعة</span></div>
+        <div><strong id="approvedCount">0</strong><span>معتمدة</span></div>
+        <div><strong id="rejectedCount">0</strong><span>مرفوضة</span></div>
+      </div>
+      <div class="admin-toolbar">
+        <div class="admin-tabs" role="tablist">
+          <button class="active" data-status="pending" type="button">قيد المراجعة</button>
+          <button data-status="approved" type="button">معتمدة</button>
+          <button data-status="rejected" type="button">مرفوضة</button>
+          <button data-status="all" type="button">الكل</button>
+        </div>
+        <button class="btn btn-outline-dark" id="refreshBtn" type="button">تحديث</button>
+      </div>
+      <div id="adminMessage" class="admin-message"></div>
+      <div id="submissionsList" class="submissions-list"></div>
     </section>
   </main>
+
+  <div class="job-panel" id="editorPanel" hidden>
+    <div class="job-panel-backdrop" id="editorBackdrop"></div>
+    <aside class="job-panel-card" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+      <div class="job-panel-head">
+        <h2 id="editorTitle">إضافة وظيفة</h2>
+        <button class="close-panel" id="closeEditor" type="button" aria-label="إغلاق">×</button>
+      </div>
+      <form id="editorForm" class="publish-form admin-editor-form">
+        <input type="hidden" name="id">
+        <label>المسمى الوظيفي<input name="title" required minlength="2" maxlength="160"></label>
+        <label>اسم الجهة<input name="company" required minlength="2" maxlength="160"></label>
+        <div class="form-row">
+          <label>المحافظة<select name="governorate" id="editorGovernorate" required></select></label>
+          <label>المجال<select name="field" id="editorField" required></select></label>
+        </div>
+        <div class="form-row">
+          <label>النوع<select name="type" required><option value="خاص">خاص</option><option value="حكومي">حكومي</option></select></label>
+          <label>الحالة<select name="status"><option value="pending">قيد المراجعة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option></select></label>
+        </div>
+        <div class="form-row">
+          <label>آخر موعد<input name="deadline" type="date" required></label>
+          <label>التواصل (اختياري)<input name="contact" maxlength="160"></label>
+        </div>
+        <label>رابط المصدر<input name="source" type="url" required dir="ltr"></label>
+        <label>التفاصيل<textarea name="description" rows="5" required minlength="10" maxlength="5000"></textarea></label>
+        <button class="btn btn-accent" type="submit">حفظ</button>
+      </form>
+    </aside>
+  </div>
   <div id="toast" class="toast" role="status"></div>
   <script src="js/admin.js"></script>
 </body>

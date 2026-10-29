@@ -9,9 +9,12 @@ create table if not exists public.job_submissions (
   deadline date not null,
   source text not null check (source ~* '^https?://'),
   description text not null check (char_length(description) between 10 and 5000),
+  contact text check (contact is null or char_length(contact) between 0 and 160),
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   created_at timestamptz not null default now()
 );
+
+alter table public.job_submissions add column if not exists contact text;
 
 create index if not exists job_submissions_status_deadline_idx on public.job_submissions (status, deadline);
 
@@ -45,12 +48,18 @@ create policy "public can read approved jobs"
   to anon, authenticated
   using (status = 'approved' or public.is_admin());
 
--- النموذج العام يرسل طلبات خاصة قيد المراجعة فقط.
+-- النموذج العام يرسل طلبات قيد المراجعة فقط.
 drop policy if exists "public can submit pending jobs" on public.job_submissions;
 create policy "public can submit pending jobs"
   on public.job_submissions for insert
   to anon, authenticated
-  with check (status = 'pending' and type = 'خاص');
+  with check (status = 'pending');
+
+drop policy if exists "admins can insert jobs" on public.job_submissions;
+create policy "admins can insert jobs"
+  on public.job_submissions for insert
+  to authenticated
+  with check (public.is_admin());
 
 -- المدير فقط يستطيع الاعتماد أو الرفض أو التعديل أو الحذف.
 drop policy if exists "admins can update jobs" on public.job_submissions;
