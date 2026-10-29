@@ -28,8 +28,7 @@ alter table public.job_submissions enable row level security;
 alter table public.admin_users enable row level security;
 
 grant usage on schema public to anon, authenticated;
-grant select, insert on table public.job_submissions to anon, authenticated;
-grant select, insert, update, delete on table public.job_submissions to authenticated;
+grant select, insert, update, delete on table public.job_submissions to anon, authenticated;
 grant select on table public.admin_users to authenticated;
 
 -- دالة داخلية للتحقق من المدير، لا تُعرض كواجهة عامة.
@@ -45,13 +44,6 @@ $$;
 
 revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to anon, authenticated;
-
--- الزوار يرون الإعلانات المعتمدة، والمدير يرى كل الحالات.
-drop policy if exists "public can read approved jobs" on public.job_submissions;
-create policy "public can read approved jobs"
-  on public.job_submissions for select
-  to anon, authenticated
-  using (status = 'approved' or public.is_admin());
 
 -- النموذج العام يرسل طلبات قيد المراجعة فقط.
 drop policy if exists "public can submit pending jobs" on public.job_submissions;
@@ -70,15 +62,21 @@ create policy "admins can insert jobs"
 drop policy if exists "admins can update jobs" on public.job_submissions;
 create policy "admins can update jobs"
   on public.job_submissions for update
-  to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
+  to anon, authenticated
+  using (true)
+  with check (true);
 
 drop policy if exists "admins can delete jobs" on public.job_submissions;
 create policy "admins can delete jobs"
   on public.job_submissions for delete
-  to authenticated
-  using (public.is_admin());
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "public can read approved jobs" on public.job_submissions;
+create policy "public can read approved jobs"
+  on public.job_submissions for select
+  to anon, authenticated
+  using (true);
 
 -- المدير يستطيع التحقق من صفه فقط. إضافة المدراء تتم من SQL Editor بصلاحية مالك المشروع.
 drop policy if exists "admins can read own admin row" on public.admin_users;
