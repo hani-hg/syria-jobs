@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>وظائف سوريا | فرص العمل الحكومية والخاصة</title>
-  <meta name="description" content="منصة مجانية للباحثين عن عمل في سوريا. إعلانات وظائف حكومية وخاصة بمصدر واضح.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -13,7 +12,6 @@
 </head>
 <body>
 
-  <!-- الهيدر -->
   <header class="site-header">
     <div class="container header-content">
       <a href="#" class="logo">
@@ -27,7 +25,6 @@
     </div>
   </header>
 
-  <!-- القسم الرئيسي (Hero) -->
   <section class="hero">
     <div class="container">
       <span class="badge">منصة مجانية بالكامل</span>
@@ -36,7 +33,6 @@
     </div>
   </section>
 
-  <!-- قسم البحث والفلترة -->
   <section class="filters-section">
     <div class="container">
       <div class="filters-box">
@@ -61,19 +57,15 @@
     </div>
   </section>
 
-  <!-- شبكة الوظائف -->
   <main class="container" id="jobs">
     <div class="results-header">
       <h2>أحدث الإعلانات</h2>
       <span id="resultsCount" class="results-count">0 إعلان</span>
     </div>
     
-    <div class="jobs-grid" id="jobsGrid">
-      <!-- سيتم توليد البطاقات هنا عبر JavaScript -->
-    </div>
+    <div class="jobs-grid" id="jobsGrid"></div>
   </main>
 
-  <!-- قسم النشر -->
   <section class="publish-section" id="publish">
     <div class="container">
       <div class="publish-box">
@@ -126,7 +118,6 @@
     </div>
   </section>
 
-  <!-- الفوتر -->
   <footer class="site-footer">
     <div class="container">
       <p>© 2026 وظائف سوريا. جميع الحقوق محفوظة.</p>
@@ -136,7 +127,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- سكربت Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/app.js"></script>
 </body>
