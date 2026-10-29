@@ -1,95 +1,60 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>وظائف سوريا | كل الشواغر بمكان واحد</title>
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173b31">
+  <meta name="description" content="وظائف حكومية وخاصة وإعلانات الباحثين عن عمل في سوريا، بمصدر واضح ومراجعة قبل النشر.">
+  <title>وظائف سوريا | فرص العمل وطلبات الباحثين</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-<header>
-  <h1>وظائف سوريا</h1>
-  <button class="btn-outline" onclick="openModal()">انشر وظيفة</button>
-</header>
-
-<section class="hero">
-  <div class="hero-blob"></div>
-  <span class="pill">منصة مجانية بالكامل</span>
-  <h2>اعثر على <span>وظيفتك التالية</span><br>في سوريا</h2>
-  <p>إعلانات حكومية وخاصة بمصدر واضح، فلترة سهلة، ومشاركة مباشرة.</p>
-</section>
-
-<div class="search-wrap">
-  <div class="search-box">
-    <input type="text" id="searchInput" placeholder="ابحث عن وظيفة، شركة، أو كلمة مفتاحية...">
-    <div class="filters-row">
-      <select id="categoryFilter"><option value="">كل المجالات</option></select>
-      <select id="locationFilter"><option value="">كل المحافظات</option></select>
-      <button class="btn-search" onclick="render()">بحث</button>
-      <select id="typeFilter">
-        <option value="">كل الأنواع</option>
-        <option value="حكومي">حكومي</option>
-        <option value="خاص">خاص</option>
-      </select>
-    </div>
-  </div>
-</div>
-
-<main>
-  <div class="section-title">
-    <h3>أحدث الإعلانات</h3>
-    <span class="count" id="resultCount"></span>
-  </div>
-  <div class="cards" id="cardsContainer"></div>
-  <div class="empty" id="emptyState" style="display:none;">لا توجد نتائج مطابقة حالياً</div>
-
-  <div class="publish" id="publish">
-    <h3>لأصحاب الشركات والمكاتب</h3>
-    <p>أرسل تفاصيل الوظيفة للمراجعة. سيتم نشر الإعلان بعد التحقق من البيانات والمصدر.</p>
-    <ul>
-      <li>المصدر إلزامي لحماية الباحثين</li>
-      <li>إمكانية تحديد النوع (حكومي / خاص)</li>
-      <li>مراجعة دقيقة قبل النشر</li>
-    </ul>
-    <button class="btn-primary" style="width:100%;padding:13px;border-radius:12px;border:none;font-weight:bold;cursor:pointer;" onclick="openModal()">انشر وظيفة الآن</button>
-  </div>
-</main>
-
-<button class="cta" onclick="openModal()">+ انشر وظيفة</button>
-
-<div class="modal-bg" id="modalBg">
-  <div class="modal">
-    <h2>نشر طلب توظيف</h2>
-    <input type="text" id="mTitle" placeholder="المسمى الوظيفي" minlength="2" maxlength="160">
-    <input type="text" id="mCompany" placeholder="اسم الشركة / الجهة" minlength="2" maxlength="160">
-    <select id="mLocation">
-      <option value="">المحافظة</option>
-    </select>
-    <select id="mField">
-      <option value="">المجال</option>
-    </select>
-    <select id="mType">
-      <option value="خاص">خاص</option>
-      <option value="حكومي">حكومي</option>
-    </select>
-    <input type="date" id="mDeadline">
-    <input type="url" id="mSource" placeholder="رابط المصدر (https://...)" dir="ltr">
-    <textarea id="mBody" placeholder="تفاصيل الوظيفة والشروط..." minlength="10"></textarea>
-    <input type="text" id="mContact" placeholder="رقم للتواصل أو بريد (اختياري)">
-    <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal()">إلغاء</button>
-      <button class="btn-primary" onclick="submitAd()">إرسال للمراجعة</button>
-    </div>
-  </div>
-</div>
-
-<footer>
-  منصة مستقلة غير حكومية، تجمع الإعلانات من مصادرها الرسمية. © 2026 وظائف سوريا.
-  <a href="admin.html">لوحة الإدارة</a>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="js/app.js"></script>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="وظائف سوريا، الرئيسية"><span class="brand-mark" aria-hidden="true">و</span><span><strong>وظائف سوريا</strong><small>فرص أقرب إليك</small></span></a>
+    <button class="btn btn-outline" type="button" data-open-form>أضف إعلانًا</button>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="hero-copy"><span class="eyebrow">منصة سورية مستقلة</span><h1 id="heroTitle">فرص العمل في سوريا، <span>بمكان واحد.</span></h1><p>وظائف حكومية وخاصة، ومساحة للباحثين عن عمل. إعلانات واضحة، ومراجعة قبل النشر.</p><button class="btn btn-light" type="button" data-open-form>أضف إعلانًا للمراجعة <span aria-hidden="true">←</span></button></div>
+      <div class="hero-stamp" aria-hidden="true"><span>سوريا</span><b>عمل<br>وفرص</b><i></i></div><div class="hero-line" aria-hidden="true"></div>
+    </section>
+    <section class="content-shell" aria-label="إعلانات العمل">
+      <nav class="section-tabs" aria-label="أقسام الإعلانات" role="tablist">
+        <button class="section-tab active" type="button" role="tab" aria-selected="true" data-section="gov"><span class="tab-number">01</span><span>وظائف حكومية</span><small>إعلانات الجهات العامة</small></button>
+        <button class="section-tab" type="button" role="tab" aria-selected="false" data-section="private"><span class="tab-number">02</span><span>وظائف قطاع خاص</span><small>فرص الشركات والجهات</small></button>
+        <button class="section-tab" type="button" role="tab" aria-selected="false" data-section="seeker"><span class="tab-number">03</span><span>مطلوب وظيفة</span><small>باحثون عن فرصة</small></button>
+      </nav>
+      <div class="search-panel">
+        <label class="search-field"><span class="sr-only">ابحث عن مهنة أو كلمة</span><span class="search-icon" aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="ابحث عن مهنة، جهة، أو مهارة" autocomplete="off"></label>
+        <label><span class="sr-only">المحافظة</span><select id="locationFilter"><option value="">كل المحافظات</option></select></label>
+        <label><span class="sr-only">المجال</span><select id="categoryFilter"><option value="">كل المجالات</option></select></label>
+        <button class="btn btn-search" id="resetFilters" type="button">مسح التصفية</button>
+      </div>
+      <div class="results-heading"><div><span class="eyebrow" id="sectionEyebrow">الفرص المتاحة</span><h2 id="sectionTitle">وظائف حكومية</h2></div><span class="result-count" id="resultCount" aria-live="polite">—</span></div>
+      <div class="cards" id="cardsContainer" aria-live="polite"></div>
+      <div class="empty" id="emptyState" hidden><span class="empty-mark">؟</span><h3>لا توجد إعلانات مطابقة الآن</h3><p>جرّب تغيير كلمات البحث أو المحافظة، أو عُد لاحقًا للإعلانات الجديدة.</p><button class="btn btn-outline" type="button" data-open-form>أرسل إعلانًا للمراجعة</button></div>
+      <aside class="safety-note"><span class="safety-icon" aria-hidden="true">!</span><div><strong>انتبه قبل التقديم</strong><p>تحقق من الجهة ومصدر الإعلان، ولا تدفع رسومًا مقابل الحصول على وظيفة أو ترسل وثائق حساسة لجهة غير موثوقة.</p></div></aside>
+    </section>
+  </main>
+  <footer class="site-footer"><a class="brand footer-brand" href="index.html"><span class="brand-mark" aria-hidden="true">و</span><strong>وظائف سوريا</strong></a><span>منصة مستقلة غير حكومية. راجع المصدر الرسمي دائمًا.</span><a href="admin.html" rel="nofollow">إدارة الموقع</a></footer>
+  <button class="floating-add" type="button" data-open-form><span aria-hidden="true">＋</span> أضف إعلانًا</button>
+  <div class="modal-bg" id="modalBg" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <div class="modal-head"><div><span class="eyebrow">إرسال للمراجعة</span><h2 id="formTitle">أضف إعلانك</h2></div><button class="modal-close" id="closeModal" type="button" aria-label="إغلاق">×</button></div>
+    <p class="form-intro" id="formIntro">اختر القسم واملأ المعلومات المطلوبة. سيظهر الإعلان بعد المراجعة والموافقة.</p>
+    <form id="adForm">
+      <label class="field-label">نوع الإعلان<select id="listingType" name="listing_type"><option value="job">وظيفة شاغرة</option><option value="seeker">مطلوب وظيفة</option></select></label>
+      <div id="jobFields"><label class="field-label">القطاع<select id="jobSector" name="type"><option value="حكومي">حكومي</option><option value="خاص">قطاع خاص</option></select></label><label class="field-label">اسم الجهة<input id="company" name="company" minlength="2" maxlength="160" placeholder="اسم الوزارة أو الشركة"></label><label class="field-label">رابط المصدر الرسمي أو الإعلان<input id="source" name="source" type="url" inputmode="url" dir="ltr" placeholder="https://..."></label><label class="field-label">آخر موعد للتقديم<input id="jobDeadline" name="deadline" type="date"></label></div>
+      <div id="seekerFields" hidden><label class="field-label">الخبرة العملية<input id="experience" name="experience" maxlength="120" placeholder="مثال: 3 سنوات في المحاسبة"></label><label class="field-label">طريقة العمل المطلوبة<select id="workArrangement" name="work_arrangement"><option value="">غير محدد</option><option>دوام كامل</option><option>دوام جزئي</option><option>عمل يومي</option><option>عن بُعد</option><option>حسب الاتفاق</option></select></label><div class="privacy-callout"><strong>خصوصيتك بيدك</strong><span>رقم الهاتف أو وسيلة التواصل لن تظهر إلا إذا أضفتها في الحقل الاختياري أدناه.</span></div></div>
+      <label class="field-label">المسمى أو المهنة المطلوبة<input id="title" name="title" required minlength="2" maxlength="160" placeholder="مثال: محاسب، مهندس مدني، معلم"></label>
+      <div class="field-row"><label class="field-label">المحافظة<select id="governorate" name="governorate" required></select></label><label class="field-label">المجال<select id="field" name="field" required></select></label></div>
+      <label class="field-label">التفاصيل والمهارات<textarea id="description" name="description" rows="4" required minlength="10" maxlength="5000" placeholder="اكتب وصفًا واضحًا ومختصرًا..."></textarea></label>
+      <label class="field-label">وسيلة تواصل (اختيارية)<input id="contact" name="contact" maxlength="160" placeholder="رقم هاتف، واتساب، أو بريد إلكتروني"></label>
+      <p class="contact-consent" id="contactConsent">إذا أضفت وسيلة تواصل فستظهر للزوار بعد اعتماد الإعلان.</p><p class="review-note">كل الإعلانات تُراجع قبل النشر. إعلانات «مطلوب وظيفة» تنتهي بعد 60 يومًا.</p>
+      <div class="modal-actions"><button class="btn btn-quiet" id="cancelModal" type="button">إلغاء</button><button class="btn btn-primary" id="submitButton" type="submit">إرسال للمراجعة</button></div><p class="form-message" id="formMessage" role="status"></p>
+    </form>
+  </section></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="js/app.js"></script>
 </body>
 </html>
