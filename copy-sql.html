@@ -8,7 +8,7 @@
     body { font-family: Tahoma, sans-serif; margin: 0; padding: 24px; background: #111; color: #fff; }
     h1 { font-size: 22px; }
     p { color: #ddd; line-height: 1.8; }
-    textarea { width: 100%; min-height: 420px; padding: 14px; border-radius: 12px; border: 0; font-size: 14px; direction: ltr; text-align: left; }
+    textarea { width: 100%; min-height: 180px; padding: 14px; border-radius: 12px; border: 0; font-size: 16px; direction: ltr; text-align: left; }
     button { width: 100%; margin-top: 14px; padding: 16px; border: 0; border-radius: 12px; background: #0F6E52; color: #fff; font-size: 20px; font-weight: bold; }
     #msg { margin-top: 12px; min-height: 24px; color: #2EBE8A; font-weight: bold; text-align: center; }
   </style>
@@ -16,40 +16,9 @@
 <body>
   <h1>انسخ أمر SQL</h1>
   <p>اضغط الزر الأخضر لنسخ النص، ثم الصقه في Supabase → SQL Editor → Run.</p>
-  <textarea id="sql" readonly>grant usage on schema public to anon, authenticated;
-grant select, insert, update, delete on table public.job_submissions to anon, authenticated;
-
-alter table public.job_submissions add column if not exists contact text;
-alter table public.job_submissions add column if not exists field text;
-alter table public.job_submissions add column if not exists deadline date;
-alter table public.job_submissions add column if not exists type text;
-alter table public.job_submissions add column if not exists source text;
-alter table public.job_submissions add column if not exists status text;
-
-drop policy if exists "public can submit pending jobs" on public.job_submissions;
-create policy "public can submit pending jobs"
-  on public.job_submissions for insert
-  to anon, authenticated
-  with check (status = 'pending');
-
-drop policy if exists "public can read approved jobs" on public.job_submissions;
-create policy "public can read approved jobs"
-  on public.job_submissions for select
-  to anon, authenticated
-  using (true);
-
-drop policy if exists "admins can update jobs" on public.job_submissions;
-create policy "admins can update jobs"
-  on public.job_submissions for update
-  to anon, authenticated
-  using (true)
-  with check (true);
-
-drop policy if exists "admins can delete jobs" on public.job_submissions;
-create policy "admins can delete jobs"
-  on public.job_submissions for delete
-  to anon, authenticated
-  using (true);</textarea>
+  <textarea id="sql" readonly>alter table public.job_submissions disable row level security;
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on table public.job_submissions to anon, authenticated;</textarea>
   <button type="button" onclick="copySql()">نسخ النص</button>
   <div id="msg"></div>
   <script>

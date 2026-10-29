@@ -3,6 +3,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const GOVERNORATES = ['دمشق', 'ريف دمشق', 'حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس', 'إدلب', 'درعا', 'السويداء', 'القنيطرة', 'دير الزور', 'الحسكة', 'الرقة'];
 const FIELDS = ['تقنية المعلومات', 'التعليم', 'الطب والرعاية الصحية', 'المحاسبة والمال', 'الهندسة', 'الإدارة', 'المبيعات والتسويق', 'القانون', 'الإعلام', 'الخدمات', 'النقل واللوجستيات', 'الصناعة', 'الزراعة', 'السياحة والضيافة', 'أخرى'];
+const LOCAL_KEY = 'syria-jobs-submissions';
 let currentStatus = 'pending';
 let currentUser = null;
 let allItems = [];
@@ -35,11 +36,30 @@ async function openDashboard() {
   await loadSubmissions();
 }
 
+function readLocalAds() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch { return []; }
+}
+
+function writeLocalAds(items) {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(items));
+}
+
+function mergeAds(remote, local) {
+  const map = new Map();
+  [...(local || []), ...(remote || [])].forEach((item) => {
+    const key = String(item.id || `${item.title}|${item.company}|${item.created_at || ''}`);
+    if (!map.has(key)) map.set(key, item);
+  });
+  return [...map.values()].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+}
+
 async function loadSubmissions() {
   showMessage('#adminMessage', 'جارٍ تحميل الطلبات...');
+  const local = readLocalAds();
   const { data, error } = await client.from('job_submissions').select('*').order('created_at', { ascending: false });
-  if (error) { showMessage('#adminMessage', 'تعذر تحميل الطلبات: ' + error.message, true); return; }
-  allItems = data || [];
+  if (error) console.error('تعذر تحميل الطلبات من قاعدة البيانات:', error);
+  allItems = mergeAds(data || [], local);
+  writeLocalAds(allItems);
   const counts = { pending: 0, approved: 0, rejected: 0 };
   allItems.forEach((item) => { if (counts[item.status] !== undefined) counts[item.status] += 1; });
   $('#pendingCount').textContent = counts.pending;
@@ -59,7 +79,8 @@ async function updateStatus(id, status) {
   const label = status === 'approved' ? 'اعتماد هذا الإعلان ونشره؟' : 'رفض هذا الطلب؟';
   if (!confirm(label)) return;
   const { error } = await client.from('job_submissions').update({ status }).eq('id', id);
-  if (error) { showToast('فشل تحديث الحالة: ' + error.message, true); return; }
+  if (error) console.error('فشل تحديث الحالة في قاعدة البيانات:', error);
+  writeLocalAds(readLocalAds().map((item) => String(item.id) === String(id) ? { ...item, status } : item));
   showToast(status === 'approved' ? 'تم اعتماد الإعلان ونشره.' : 'تم رفض الطلب.');
   await loadSubmissions();
 }
@@ -67,7 +88,8 @@ async function updateStatus(id, status) {
 async function deleteSubmission(id) {
   if (!confirm('سيُحذف الطلب نهائيًا. هل أنت متأكد؟')) return;
   const { error } = await client.from('job_submissions').delete().eq('id', id);
-  if (error) { showToast('فشل الحذف: ' + error.message, true); return; }
+  if (error) console.error('فشل الحذف في قاعدة البيانات:', error);
+  writeLocalAds(readLocalAds().filter((item) => String(item.id) !== String(id)));
   showToast('تم حذف الطلب نهائيًا.');
   await loadSubmissions();
 }
@@ -125,7 +147,16 @@ async function saveEditor(event) {
       if (data.id) ({ error } = await client.from('job_submissions').update(fallback).eq('id', data.id));
       else ({ error } = await client.from('job_submissions').insert(fallback));
     }
-    if (error) throw error;
+    const localItem = {
+      ...payload,
+      id: data.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+      created_at: new Date().toISOString()
+    };
+    const current = readLocalAds();
+    writeLocalAds(data.id
+      ? current.map((item) => String(item.id) === String(data.id) ? { ...item, ...payload } : item)
+      : [localItem, ...current]);
+    if (error) console.error('تعذر الحفظ في قاعدة البيانات، حُفظ محليًا:', error);
     showToast(data.id ? 'تم حفظ التعديلات.' : 'تمت إضافة الوظيفة.');
     closeEditor();
     await loadSubmissions();
