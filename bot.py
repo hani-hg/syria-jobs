@@ -31,7 +31,7 @@ def save_to_supabase(jobs):
         # التحقق من عدم وجود الإعلان مسبقاً (لمنع التكرار)
         response = supabase.table("job_submissions").select("id").eq("title", job["title"]).execute()
         if not response.data:
-            supabase.table("job_submissions").insert(job).execute()
+            supabase.table("job_submissions").insert(job, returning="minimal").execute()
             print(f"تمت إضافة: {job['title']}")
         else:
             print(f"موجود مسبقاً: {job['title']}")
