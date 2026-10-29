@@ -1,145 +1,116 @@
-:root {
-  --ink: #121826;
-  --navy: #1b2838;
-  --navy-2: #243447;
-  --accent: #e85d04;
-  --accent-dark: #c2410c;
-  --teal: #0f766e;
-  --paper: #f4efe6;
-  --card: #fffcf7;
-  --text: #1c1917;
-  --muted: #6f675e;
-  --border: #e4dccf;
-  --shadow: 0 16px 40px rgba(18, 24, 38, .08);
-  --radius: 20px;
-  --transition: .22s ease;
+// --- إعدادات Supabase ---
+const SUPABASE_URL = 'https://zpbwsdjyzgtlwwpfywcg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwYndzZGp5emd0bHd3cGZ5d2NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTU0MDYsImV4cCI6MjEwODc3MTQwNn0.CjnXWEnxM-u9lW9ftzu4BcLL6FR0qLt-i1AD5J7CcIE';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const sampleJobs = [
+  { id: 'job-1', title: 'مهندس برمجيات', company: 'شركة تقنية سورية', governorate: 'دمشق', field: 'تقنية المعلومات', type: 'خاص', deadline: '2026-12-20', description: 'تطوير وصيانة تطبيقات الويب والعمل ضمن فريق تقني متكامل.', source: 'https://www.linkedin.com/jobs/' },
+  { id: 'job-2', title: 'مدرس لغة إنكليزية', company: 'مديرية التربية', governorate: 'حلب', field: 'التعليم', type: 'حكومي', deadline: '2026-11-30', description: 'فرصة تدريس للمدارس العامة وفق الشروط المعلنة من الجهة الرسمية.', source: 'https://moed.gov.sy/' },
+  { id: 'job-3', title: 'محاسب', company: 'مؤسسة تجارية', governorate: 'حمص', field: 'المحاسبة والمال', type: 'خاص', deadline: '2026-12-10', description: 'إدارة الحسابات وإعداد التقارير المالية ومتابعة الفواتير.', source: 'https://example.com/jobs/accountant' },
+  { id: 'job-4', title: 'طبيب مقيم', company: 'وزارة الصحة', governorate: 'اللاذقية', field: 'الطب والرعاية الصحية', type: 'حكومي', deadline: '2026-12-05', description: 'شواغر للأطباء المقيمين بحسب الاختصاصات والأماكن المتاحة.', source: 'https://moh.gov.sy/' }
+];
+
+let allJobs = [];
+let visibleJobs = [];
+
+const $ = (selector) => document.querySelector(selector);
+const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+const isActive = (job) => job.deadline && new Date(`${job.deadline}T23:59:59`) >= new Date();
+const formatDate = (date) => new Intl.DateTimeFormat('ar-SY', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(`${date}T12:00:00`));
+
+async function loadJobs() {
+  try {
+    const { data, error } = await supabaseClient.from('jobs').select('*').eq('status', 'published').order('created_at', { ascending: false });
+    if (error) throw error;
+    const activeDbJobs = (data || []).filter(isActive);
+    allJobs = [...sampleJobs, ...activeDbJobs].filter(isActive);
+    populateFilters();
+    applyFilters();
+  } catch (error) {
+    console.error('Error loading jobs:', error);
+    showToast('حدث خطأ في تحميل الإعلانات', 'error');
+  }
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body { background: var(--paper); color: var(--text); font-family: "Cairo", Tahoma, "Segoe UI", Arial, sans-serif; line-height: 1.75; }
-a { color: inherit; }
-.container { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
-button, input, select, textarea { font: inherit; }
-
-.site-header { position: sticky; top: 0; z-index: 20; background: var(--ink); color: #fff; border-bottom: 3px solid var(--accent); }
-.header-inner { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
-.brand-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(145deg, var(--accent), var(--accent-dark)); color: #fff; font-size: 24px; font-weight: 800; }
-.brand strong, .brand small { display: block; }
-.brand strong { font-size: 20px; }
-.brand small { color: #f4c9a8; font-size: 11px; font-weight: 600; }
-.main-nav { display: flex; align-items: center; gap: 6px; }
-.main-nav a { padding: 8px 14px; border-radius: 999px; color: #e8e4dc; text-decoration: none; font-size: 14px; font-weight: 700; transition: var(--transition); }
-.main-nav a:hover, .main-nav a.active { background: var(--navy-2); color: #fff; }
-.menu-toggle { display: none; border: 0; background: transparent; color: #fff; font-size: 26px; cursor: pointer; }
-
-.hero { position: relative; overflow: hidden; padding: 72px 0 80px; color: #fff; background: linear-gradient(145deg, #121826 0%, #1b2838 55%, #0f766e 160%); }
-.hero-pattern { position: absolute; inset: 0; opacity: .18; background-image: radial-gradient(circle at 20% 20%, #e85d04 0 2px, transparent 2px), radial-gradient(circle at 80% 70%, #fff 0 1px, transparent 1px); background-size: 42px 42px, 28px 28px; pointer-events: none; }
-.hero-grid { position: relative; display: grid; grid-template-columns: 1.45fr .55fr; align-items: center; gap: 56px; }
-.eyebrow { margin-bottom: 8px; color: var(--accent); font-size: 13px; font-weight: 800; }
-.hero h1 { max-width: 700px; font-size: clamp(30px, 5vw, 52px); line-height: 1.28; }
-.hero-text { max-width: 620px; margin: 16px 0 26px; color: #d9d3c7; font-size: 17px; }
-.hero-search { display: flex; gap: 8px; max-width: 560px; padding: 8px; border-radius: 16px; background: rgba(255,255,255,.1); backdrop-filter: blur(8px); }
-.hero-search input { flex: 1; min-height: 48px; padding: 10px 16px; border: 0; border-radius: 12px; background: #fff; color: var(--text); }
-.hero-stats { display: grid; gap: 12px; }
-.hero-stats div { padding: 18px 20px; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; background: rgba(255,255,255,.07); }
-.hero-stats strong { display: block; color: #ffd4b0; font-size: 32px; line-height: 1.2; }
-.hero-stats span { color: #cfc8bc; font-size: 13px; }
-
-.btn { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 9px 18px; border: 1px solid transparent; border-radius: 12px; font-weight: 800; text-decoration: none; cursor: pointer; transition: var(--transition); }
-.btn:hover { transform: translateY(-2px); }
-.btn:disabled { opacity: .65; cursor: not-allowed; transform: none; }
-.btn-accent { background: var(--accent); color: #fff; }
-.btn-accent:hover { background: var(--accent-dark); }
-.btn-outline-dark { border-color: var(--navy); color: var(--navy); background: transparent; }
-.btn-outline-dark:hover { background: var(--navy); color: #fff; }
-.btn-ghost { background: #f3ece3; color: var(--navy); }
-.btn-whatsapp { background: #25d366; color: #fff; }
-.btn-whatsapp:hover { background: #128c7e; }
-.btn-source { border-color: var(--teal); color: var(--teal); }
-.btn-source:hover { background: #e7f4f2; }
-
-.jobs-section { padding: 56px 0 72px; }
-.section-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 22px; }
-h2 { color: var(--ink); font-size: 30px; line-height: 1.3; }
-.results-count { color: var(--teal); font-size: 14px; font-weight: 800; }
-.filters { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); }
-.filters label, .publish-form label { display: grid; gap: 5px; color: var(--navy); font-size: 13px; font-weight: 800; }
-input, select, textarea { width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 12px; background: #fff; color: var(--text); outline: 0; }
-input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232, 93, 4, .14); }
-
-.jobs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 24px; }
-.job-card { display: flex; flex-direction: column; min-height: 300px; padding: 22px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); transition: var(--transition); }
-.job-card:hover { transform: translateY(-5px); border-color: #f0c9a8; }
-.job-top, .job-meta, .job-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.job-top { margin-bottom: 14px; }
-.job-type { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
-.job-type.government { background: #dcefea; color: var(--teal); }
-.job-type.private { background: #fde7d4; color: var(--accent-dark); }
-.fav-btn { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 50%; background: #fff; color: var(--muted); cursor: pointer; }
-.fav-btn.on { border-color: #f3b1b1; background: #fff1f1; color: #be123c; }
-.job-date { color: var(--muted); font-size: 12px; }
-.job-card h3 { color: var(--ink); font-size: 19px; }
-.company { margin-bottom: 10px; color: var(--teal); font-weight: 800; }
-.job-meta { justify-content: flex-start; flex-wrap: wrap; margin-bottom: 12px; color: var(--muted); font-size: 12px; }
-.job-description { flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 16px; color: #5c564e; font-size: 13px; }
-.job-actions { margin-top: auto; }
-.job-actions .btn { min-height: 38px; font-size: 12px; }
-.empty-state { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; padding: 52px; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--muted); background: var(--card); }
-.empty-state strong { color: var(--ink); font-size: 18px; }
-.load-more-wrap { display: flex; justify-content: center; margin-top: 28px; }
-
-.publish-section { padding: 72px 0; color: #fff; background: var(--navy); }
-.publish-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 48px; align-items: start; }
-.publish-section h2 { color: #fff; }
-.publish-section p { color: #d5cfc4; }
-.publish-points { margin-top: 18px; padding-right: 18px; color: #f0c9a8; }
-.publish-form { display: grid; gap: 14px; padding: 24px; border-radius: var(--radius); background: var(--card); color: var(--text); box-shadow: var(--shadow); }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.form-note { color: var(--muted) !important; font-size: 12px; }
-
-.about-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 56px 0; }
-.about-card { display: flex; gap: 14px; padding: 22px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
-.about-number { color: var(--accent); font-size: 24px; font-weight: 800; }
-.about-card h3 { margin-bottom: 4px; color: var(--ink); font-size: 17px; }
-.about-card p { color: var(--muted); font-size: 13px; }
-
-.site-footer { padding: 26px 0; color: #d5cfc4; background: var(--ink); }
-.site-footer .container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.site-footer strong { color: #ffd4b0; font-size: 18px; }
-
-.job-panel { position: fixed; inset: 0; z-index: 40; display: flex; justify-content: flex-start; }
-.job-panel[hidden] { display: none; }
-.job-panel-backdrop { position: absolute; inset: 0; background: rgba(18, 24, 38, .55); }
-.job-panel-card { position: relative; width: min(520px, 100%); height: 100%; overflow: auto; padding: 28px; background: var(--card); box-shadow: var(--shadow); }
-.job-panel-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-.job-panel-card h2 { font-size: 26px; }
-.job-panel-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 18px; color: var(--muted); font-size: 13px; }
-.job-panel-body { color: #4b453e; font-size: 15px; white-space: pre-wrap; }
-.job-panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
-.close-panel { width: 38px; height: 38px; border: 1px solid var(--border); border-radius: 50%; background: #fff; cursor: pointer; }
-
-.toast { position: fixed; right: 22px; bottom: 22px; z-index: 50; max-width: min(360px, calc(100% - 44px)); padding: 13px 18px; border-radius: 12px; background: var(--ink); color: #fff; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(12px); transition: var(--transition); }
-.toast.show { opacity: 1; transform: translateY(0); }
-.toast.error { background: #9f1239; }
-
-@media (max-width: 900px) {
-  .hero-grid, .publish-grid { grid-template-columns: 1fr; gap: 28px; }
-  .filters { grid-template-columns: 1fr 1fr; }
-  .jobs-grid { grid-template-columns: repeat(2, 1fr); }
-  .about-section { grid-template-columns: 1fr; }
+function populateFilters() {
+  const values = (key) => [...new Set(allJobs.map((job) => job[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar'));
+  $('#governorateFilter').innerHTML = '<option value="">كل المحافظات</option>' + values('governorate').map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  $('#fieldFilter').innerHTML = '<option value="">كل المجالات</option>' + values('field').map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
 }
-@media (max-width: 620px) {
-  .container { width: min(100% - 28px, 1180px); }
-  .main-nav { display: none; position: absolute; inset: 76px 0 auto; padding: 12px; flex-direction: column; align-items: stretch; background: var(--ink); border-bottom: 2px solid var(--accent); }
-  .main-nav.open { display: flex; }
-  .menu-toggle { display: block; }
-  .hero { padding: 48px 0 56px; }
-  .filters, .jobs-grid, .form-row { grid-template-columns: 1fr; }
-  .hero-search { flex-direction: column; }
-  .section-heading { align-items: start; flex-direction: column; }
-  .job-actions { align-items: stretch; flex-direction: column; }
-  .job-actions .btn { width: 100%; }
-  .site-footer .container { flex-direction: column; align-items: flex-start; }
+
+function applyFilters() {
+  const search = $('#searchInput').value.trim().toLowerCase();
+  const governorate = $('#governorateFilter').value;
+  const field = $('#fieldFilter').value;
+  const type = $('#typeFilter').value;
+  visibleJobs = allJobs.filter((job) => {
+    const haystack = `${job.title} ${job.company} ${job.description}`.toLowerCase();
+    return (!search || haystack.includes(search)) && (!governorate || job.governorate === governorate) && (!field || job.field === field) && (!type || job.type === type);
+  });
+  renderJobs();
 }
+
+function renderJobs() {
+  $('#resultsCount').textContent = `${visibleJobs.length} إعلان`;
+  if (!visibleJobs.length) {
+    $('#jobsGrid').innerHTML = '<div class="empty-state"><strong>لا توجد نتائج مطابقة</strong><span>جرّب تغيير الفلاتر أو كلمة البحث.</span></div>';
+    return;
+  }
+  $('#jobsGrid').innerHTML = visibleJobs.map((job) => `
+    <article class="job-card">
+      <div class="job-top">
+        <span class="job-type ${job.type === 'حكومي' ? 'government' : 'private'}">${escapeHtml(job.type)}</span>
+        <span class="job-date">حتى ${formatDate(job.deadline)}</span>
+      </div>
+      <h3>${escapeHtml(job.title)}</h3>
+      <p class="company">${escapeHtml(job.company)}</p>
+      <div class="job-meta">
+        <span>⌖ ${escapeHtml(job.governorate)}</span>
+        <span>◈ ${escapeHtml(job.field)}</span>
+      </div>
+      <p class="job-description">${escapeHtml(job.description)}</p>
+      <div class="job-actions">
+        <a href="${escapeHtml(job.source)}" target="_blank" rel="noopener noreferrer">رابط المصدر &larr;</a>
+        <button class="btn-whatsapp" type="button" onclick="shareJob('${escapeHtml(job.id)}')">مشاركة</button>
+      </div>
+    </article>`).join('');
+}
+
+function shareJob(id) {
+  const job = allJobs.find((item) => item.id === id);
+  if (!job) return;
+  const url = new URL(window.location.href);
+  url.hash = 'jobs';
+  const text = `فرصة عمل عبر وظائف سوريا\n${job.title} - ${job.company}\nالمحافظة: ${job.governorate}\nآخر موعد: ${formatDate(job.deadline)}\n${url.toString()}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+}
+
+function showToast(message, type = 'success') {
+  const toast = $('#toast'); toast.textContent = message; toast.className = `toast show ${type}`;
+  window.setTimeout(() => { toast.className = 'toast'; }, 3500);
+}
+
+async function handlePublish(event) {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const { error } = await supabaseClient.from('jobs').insert([{
+        title: data.title, company: data.company, governorate: data.governorate,
+        field: data.field, type: 'خاص', deadline: data.deadline,
+        description: data.description, source: data.source || '', status: 'pending'
+    }]);
+    if (error) throw error;
+    event.currentTarget.reset();
+    showToast('تم استلام الإعلان، وهو الآن قيد المراجعة.');
+  } catch (error) {
+    console.error('Error submitting job:', error);
+    showToast('حدث خطأ أثناء إرسال الإعلان', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if($('#publishForm')) $('#publishForm').addEventListener('submit', handlePublish);
+  loadJobs();
+});
