@@ -12,7 +12,6 @@ supabase: Client = create_client(URL, KEY)
 def delete_old_samples():
     print("جاري حذف الإعلانات التجريبية...")
     try:
-        # حذف الإعلانات التي تحتوي على كلمة "تجريبي" في الوصف
         supabase.table("job_submissions").delete().ilike("description", "%تجريبي%").execute()
         print("تم حذف الإعلانات التجريبية.")
     except Exception as e:
@@ -32,18 +31,24 @@ def fetch_telegram_jobs():
         messages = soup.find_all('div', class_='tgme_widget_message_text')
         jobs = []
         
+        # الكلمات المفتاحية التي تدل على أن الوظيفة حكومية
+        gov_keywords = ["وزارة", "مديرية", "مجلس", "هيئة", "حكومة", "الجمهورية العربية السورية", "وزير", "مناقصة"]
+        
         for msg in messages[-5:]: # آخر 5 رسائل
             text = msg.get_text(separator='\n').strip()
             if len(text) < 20: continue # تجاهل الرسائل القصيرة
 
             title = text.split('\n')[0][:100] # أول سطر كعنوان
             
+            # تحديد نوع الوظيفة تلقائياً
+            job_type = "حكومي" if any(word in text for word in gov_keywords) else "خاص"
+            
             job = {
                 "title": title,
                 "company": "من قناة وظفني",
                 "governorate": "سوريا",
                 "field": "عام",
-                "type": "خاص",
+                "type": job_type,  # سيتم وضع التصنيف هنا تلقائياً
                 "deadline": (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d'),
                 "description": text,
                 "source": "https://t.me/wazafne175",
@@ -63,7 +68,7 @@ def save_to_supabase(jobs):
             check = supabase.table("job_submissions").select("id").eq("title", job['title']).execute()
             if not check.data:
                 supabase.table("job_submissions").insert(job, returning="minimal").execute()
-                print(f"تمت إضافة: {job['title']}")
+                print(f"تمت إضافة: {job['title']} (النوع: {job['type']})")
             else:
                 print(f"موجود مسبقاً: {job['title']}")
         except Exception as e:
