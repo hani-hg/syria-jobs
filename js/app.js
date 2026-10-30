@@ -170,3 +170,52 @@ fillSelect($('governorate'),GOVERNORATES,'اختر المحافظة');
 fillSelect($('field'),FIELDS,'اختر المجال');
 setFormType();
 loadAds();
+
+function openContactModal() {
+  $('contactForm').reset();
+  $('contactMessageStatus').textContent = '';
+  $('contactMessageStatus').className = 'form-message';
+  $('contactModalBg').hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => $('contactName').focus(), 50);
+}
+function closeContactModal() {
+  $('contactModalBg').hidden = true;
+  document.body.style.overflow = '';
+}
+async function submitContactMessage(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!form.reportValidity()) return;
+  const button = $('sendContact');
+  const status = $('contactMessageStatus');
+  button.disabled = true;
+  button.textContent = 'جارٍ الإرسال…';
+  status.textContent = '';
+  status.className = 'form-message';
+  const payload = Object.fromEntries(new FormData(form).entries());
+  try {
+    const response = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) throw new Error(result.error || 'تعذر إرسال الرسالة.');
+    status.textContent = 'وصلت رسالتك بنجاح. شكرًا لتواصلك معنا.';
+    form.reset();
+    setTimeout(closeContactModal, 1800);
+  } catch (error) {
+    status.className = 'form-message error';
+    status.textContent = error.message || 'تعذر إرسال الرسالة الآن. حاول مجددًا.';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'إرسال الرسالة';
+  }
+}
+$('openContact').addEventListener('click', openContactModal);
+$('closeContact').addEventListener('click', closeContactModal);
+$('cancelContact').addEventListener('click', closeContactModal);
+$('contactModalBg').addEventListener('click', (event) => { if (event.target === $('contactModalBg')) closeContactModal(); });
+$('contactForm').addEventListener('submit', submitContactMessage);
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('contactModalBg').hidden) closeContactModal(); });

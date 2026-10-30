@@ -4,6 +4,7 @@ const client = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const GOVERNORATES = ['دمشق','ريف دمشق','حلب','حمص','حماة','اللاذقية','طرطوس','إدلب','درعا','السويداء','القنيطرة','دير الزور','الحسكة','الرقة'];
 const FIELDS = ['تقنية المعلومات','التعليم','الطب والرعاية الصحية','المحاسبة والمال','الهندسة','الإدارة','المبيعات والتسويق','القانون','الإعلام','الخدمات','النقل واللوجستيات','الصناعة','الزراعة','السياحة والضيافة','أخرى'];
 let currentStatus = 'pending';
+let currentView = 'submissions';
 let allItems = [];
 let currentUser = null;
 const $ = (selector) => document.querySelector(selector);
@@ -32,6 +33,35 @@ async function loadSubmissions(){
   const items=currentStatus==='all'?allItems:allItems.filter((item)=>item.status===currentStatus);
   renderSubmissions(items);setMessage($('#adminMessage'),`تم تحميل ${items.length} إعلان.`);
 }
+
+async function loadMessages(){
+  if(!currentUser)return;
+  setMessage($('#adminMessage'),'جارٍ تحميل الرسائل…');
+  const {data,error}=await client.from('messages').select('id,name,contact,message,created_at').order('created_at',{ascending:false});
+  if(error){$('#messagesList').innerHTML='<div class="admin-empty">تعذر تحميل صندوق الوارد. تأكد من تطبيق migration-contact-messages.sql.</div>';setMessage($('#adminMessage'),'تعذر تحميل الرسائل: '+error.message,true);return;}
+  renderMessages(data||[]);
+  setMessage($('#adminMessage'),`تم تحميل ${(data||[]).length} رسالة.`);
+}
+function renderMessages(messages){
+  if(!messages.length){$('#messagesList').innerHTML='<div class="admin-empty">لا توجد رسائل واردة حتى الآن.</div>';return;}
+  $('#messagesList').innerHTML=messages.map((message)=>`<article class="message-card"><div class="message-card-head"><div><span class="message-label">رسالة واردة</span><h2>${escapeHtml(message.name)}</h2></div><time>${escapeHtml(formatDate(message.created_at))}</time></div><p class="message-contact"><b>وسيلة التواصل:</b> ${escapeHtml(message.contact)}</p><p class="message-body">${escapeHtml(message.message)}</p></article>`).join('');
+}
+function setDashboardView(view,status=currentStatus){
+  currentView=view;
+  currentStatus=status;
+  document.querySelectorAll('.admin-tabs button').forEach((button)=>{
+    const active=view==='messages'?button.dataset.view==='messages':button.dataset.view==='submissions'&&button.dataset.status===status;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-selected',String(active));
+  });
+  $('#submissionsList').hidden=view!=='submissions';
+  $('#messagesList').hidden=view!=='messages';
+  $('#adminStats').hidden=view==='messages';
+  $('#dashboardTitle').textContent=view==='messages'?'صندوق الوارد':'طلبات الإعلانات';
+  $('#addJobBtn').hidden=view==='messages';
+  if(view==='messages')loadMessages();else loadSubmissions();
+}
+
 function renderSubmissions(items){
   if(!items.length){$('#submissionsList').innerHTML='<div class="admin-empty">لا توجد إعلانات في هذا القسم.</div>';return;}
   $('#submissionsList').innerHTML=items.map((item)=>{
@@ -47,9 +77,10 @@ function closeEditor(){ $('#editorBackdrop').hidden=true;document.body.style.ove
 async function saveEditor(event){event.preventDefault();if(!currentUser)return;const form=event.currentTarget;const data=Object.fromEntries(new FormData(form).entries());const seeker=data.listing_type==='seeker';if(!seeker&&!data.source.trim()){showToast('أضف رابط مصدر الإعلان قبل حفظ الوظيفة.',true);return;}const original=allItems.find((item)=>String(item.id)===String(data.id));const deadline=seeker&&data.status==='approved'&&original?.status!=='approved'?datePlus(60):data.deadline;const payload={listing_type:data.listing_type,title:data.title.trim(),company:seeker?(data.company.trim()||'باحث عن عمل'):(data.company.trim()||'جهة معلنة'),governorate:data.governorate,field:data.field,type:data.type,deadline,source:seeker?null:(data.source.trim()||null),description:data.description.trim(),contact:data.contact.trim()||null,experience:seeker?(data.experience.trim()||null):null,work_arrangement:seeker?(data.work_arrangement.trim()||null):null,status:data.status||'pending'};const button=form.querySelector('[type="submit"]');button.disabled=true;try{const result=data.id?await client.from('job_submissions').update(payload).eq('id',data.id):await client.from('job_submissions').insert(payload);if(result.error)throw result.error;showToast(data.id?'تم حفظ التعديلات.':'تمت إضافة الإعلان.');closeEditor();await loadSubmissions();}catch(error){showToast('فشل الحفظ: '+error.message,true);}finally{button.disabled=false;}}
 $('#loginForm').addEventListener('submit',async(event)=>{event.preventDefault();const button=event.currentTarget.querySelector('[type="submit"]');button.disabled=true;setMessage($('#loginMessage'),'جارٍ التحقق…');const {data,error}=await client.auth.signInWithPassword({email:$('#loginEmail').value.trim(),password:$('#loginPassword').value});button.disabled=false;if(error){setMessage($('#loginMessage'),'تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.',true);return;}await authorize(data.user);});
 $('#signOutBtn').addEventListener('click',async()=>{await client.auth.signOut();showLoggedOut('تم تسجيل الخروج.');});
-$('#refreshBtn').addEventListener('click',loadSubmissions);$('#addJobBtn').addEventListener('click',()=>openEditor());$('#closeEditor').addEventListener('click',closeEditor);$('#editorBackdrop').addEventListener('click',(event)=>{if(event.target===$('#editorBackdrop'))closeEditor();});$('#editorForm').addEventListener('submit',saveEditor);
+$('#refreshBtn').addEventListener('click',()=>currentView==='messages'?loadMessages():loadSubmissions());$('#addJobBtn').addEventListener('click',()=>openEditor());$('#closeEditor').addEventListener('click',closeEditor);$('#editorBackdrop').addEventListener('click',(event)=>{if(event.target===$('#editorBackdrop'))closeEditor();});$('#editorForm').addEventListener('submit',saveEditor);
 $('#submissionsList').addEventListener('click',(event)=>{const button=event.target.closest('button[data-action]');if(!button)return;if(button.dataset.action==='edit')openEditor(allItems.find((item)=>String(item.id)===button.dataset.id));else if(button.dataset.action==='delete')deleteSubmission(button.dataset.id);else updateStatus(button.dataset.id,button.dataset.action);});
-document.querySelectorAll('.admin-tabs button').forEach((button)=>button.addEventListener('click',()=>{document.querySelectorAll('.admin-tabs button').forEach((tab)=>tab.classList.remove('active'));button.classList.add('active');currentStatus=button.dataset.status;loadSubmissions();}));
+document.querySelectorAll('.admin-tabs button[data-status]').forEach((button)=>button.addEventListener('click',()=>setDashboardView('submissions',button.dataset.status)));
+$('[data-view=messages]').addEventListener('click',()=>setDashboardView('messages'));
 document.addEventListener('keydown',(event)=>{if(event.key==='Escape')closeEditor();});
 fillSelect($('#editorGovernorate'),GOVERNORATES,'اختر المحافظة');fillSelect($('#editorField'),FIELDS,'اختر المجال');
 $('#dashboardPanel').hidden=true;
