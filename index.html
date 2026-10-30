@@ -12,8 +12,11 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="index.html" aria-label="وظائف سوريا، الرئيسية"><span class="brand-mark" aria-hidden="true">و</span><span><strong>وظائف سوريا</strong><small>فرص أقرب إليك</small></span></a>
-    <button class="btn btn-outline" type="button" data-open-form>أضف إعلانًا</button>
+    <div class="header-brand-group">
+      <a class="admin-gateway" href="admin.html" aria-label="لوحة التحكم"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 8.5h16l1 11H3l1-11Z"/><path d="M8 8.5V6a4 4 0 0 1 8 0v2.5M3.8 12h16.4M10 12v2h4v-2"/></svg></a>
+      <a class="brand brand-home" href="index.html" aria-label="وظائف سوريا، الرئيسية"><span><strong>وظائف سوريا</strong><small>فرص أقرب إليك</small></span></a>
+    </div>
+    <button class="btn btn-header-add" type="button" data-open-form>أضف إعلانًا</button>
   </header>
   <main>
     <section class="hero" aria-labelledby="heroTitle">
@@ -38,7 +41,7 @@
       <aside class="safety-note"><span class="safety-icon" aria-hidden="true">!</span><div><strong>انتبه قبل التقديم</strong><p>تحقق من الجهة ومصدر الإعلان، ولا تدفع رسومًا مقابل الحصول على وظيفة أو ترسل وثائق حساسة لجهة غير موثوقة.</p></div></aside>
     </section>
   </main>
-  <footer class="site-footer"><a class="brand footer-brand" href="index.html"><span class="brand-mark" aria-hidden="true">و</span><strong>وظائف سوريا</strong></a><span>منصة مستقلة غير حكومية. راجع المصدر الرسمي دائمًا.</span><a href="admin.html" rel="nofollow">إدارة الموقع</a></footer>
+  <footer class="site-footer"><a class="brand footer-brand" href="index.html"><strong>وظائف سوريا</strong></a><span>منصة مستقلة غير حكومية. راجع المصدر الرسمي دائمًا.</span><button class="footer-contact" id="openContact" type="button">تواصل معنا</button></footer>
   <div class="modal-bg" id="modalBg" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
     <div class="modal-head"><div><span class="eyebrow">إرسال للمراجعة</span><h2 id="formTitle">أضف إعلانك</h2></div><button class="modal-close" id="closeModal" type="button" aria-label="إغلاق">×</button></div>
     <p class="form-intro" id="formIntro">اختر القسم واملأ المعلومات المطلوبة. سيظهر الإعلان بعد المراجعة والموافقة.</p>
@@ -52,6 +55,17 @@
       <label class="field-label">وسيلة تواصل (اختيارية)<input id="contact" name="contact" maxlength="160" placeholder="رقم هاتف، واتساب، أو بريد إلكتروني"></label>
       <p class="contact-consent" id="contactConsent">إذا أضفت وسيلة تواصل فستظهر للزوار بعد اعتماد الإعلان.</p><p class="review-note">كل الإعلانات تُراجع قبل النشر. إعلانات «مطلوب وظيفة» تنتهي بعد 60 يومًا.</p>
       <div class="modal-actions"><button class="btn btn-quiet" id="cancelModal" type="button">إلغاء</button><button class="btn btn-primary" id="submitButton" type="submit">إرسال للمراجعة</button></div><p class="form-message" id="formMessage" role="status"></p>
+    </form>
+  </section></div>
+  <div class="modal-bg" id="contactModalBg" hidden><section class="modal contact-modal" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
+    <div class="modal-head"><div><span class="eyebrow">نحن هنا للمساعدة</span><h2 id="contactTitle">تواصل معنا</h2></div><button class="modal-close" id="closeContact" type="button" aria-label="إغلاق">×</button></div>
+    <p class="form-intro">أرسل سؤالك أو ملاحظتك، وسنطّلع عليها في أقرب وقت.</p>
+    <form id="contactForm">
+      <label class="field-label">الاسم<input name="name" id="contactName" required minlength="2" maxlength="100" autocomplete="name"></label>
+      <label class="field-label">البريد الإلكتروني أو رقم الهاتف<input name="contact" id="contactAddress" required minlength="3" maxlength="180" autocomplete="email" placeholder="مثال: name@example.com أو 09xxxxxxxx"></label>
+      <label class="field-label">الرسالة<textarea name="message" id="contactMessage" rows="5" required minlength="5" maxlength="3000" placeholder="اكتب رسالتك هنا..."></textarea></label>
+      <label class="contact-honeypot" aria-hidden="true">اترك هذا الحقل فارغًا<input name="website" tabindex="-1" autocomplete="off"></label>
+      <div class="modal-actions"><button class="btn btn-quiet" id="cancelContact" type="button">إلغاء</button><button class="btn btn-primary" id="sendContact" type="submit">إرسال الرسالة</button></div><p class="form-message" id="contactMessageStatus" role="status" aria-live="polite"></p>
     </form>
   </section></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="js/app.js"></script>
