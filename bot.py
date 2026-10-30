@@ -9,52 +9,49 @@ URL = os.environ.get("SUPABASE_URL")
 KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(URL, KEY)
 
+def delete_old_samples():
+    print("جاري حذف الإعلانات التجريبية...")
+    try:
+        # حذف الإعلانات التي تحتوي على كلمة "تجريبي" في الوصف
+        supabase.table("job_submissions").delete().ilike("description", "%تجريبي%").execute()
+        print("تم حذف الإعلانات التجريبية.")
+    except Exception as e:
+        print(f"خطأ في الحذف: {e}")
+
 def fetch_telegram_jobs():
     print("جاري الاتصال بقناة وظفني...")
-    # رابط المعاينة العامة لقناة وظفني
     channel_url = "https://t.me/s/wazafne175"
-    
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     
     try:
         response = requests.get(channel_url, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # استخراج الرسائل من الصفحة
+        # البحث عن جميع الرسائل النصية
         messages = soup.find_all('div', class_='tgme_widget_message_text')
         jobs = []
         
-        # أخذ آخر 5 رسائل فقط لتجنب التكرار والضغط على القاعدة
-        for msg in messages[-5:]:
+        for msg in messages[-5:]: # آخر 5 رسائل
             text = msg.get_text(separator='\n').strip()
-            
-            # تجاهل الرسائل القصيرة جداً (قد تكون صوراً أو تعليقات)
-            if len(text) < 30:
-                continue
+            if len(text) < 20: continue # تجاهل الرسائل القصيرة
 
-            # استخراج أول سطر كعنوان للوظيفة
-            lines = text.split('\n')
-            title = lines[0][:100] # أول 100 حرف كعنوان
+            title = text.split('\n')[0][:100] # أول سطر كعنوان
             
-            # تجهيز البيانات للإدخال
             job = {
                 "title": title,
-                "company": "غير محدد", # القناة لا توفر الشركة دائماً
-                "governorate": "غير محدد",
+                "company": "من قناة وظفني",
+                "governorate": "سوريا",
                 "field": "عام",
                 "type": "خاص",
-                "deadline": (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d'), # تاريخ افتراضي بعد أسبوعين
+                "deadline": (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d'),
                 "description": text,
-                "source": f"https://t.me/wazafne175",
+                "source": "https://t.me/wazafne175",
                 "status": "pending"
             }
             jobs.append(job)
             
         return jobs
-        
     except Exception as e:
         print(f"حدث خطأ أثناء السحب: {e}")
         return []
@@ -62,10 +59,8 @@ def fetch_telegram_jobs():
 def save_to_supabase(jobs):
     for job in jobs:
         try:
-            # التحقق من عدم وجود الإعلان مسبقاً بناءً على أول 50 حرف من الوصف
-            # (لأن القناة لا توفر معرّفاً فريداً لكل إعلان)
-            check = supabase.table("job_submissions").select("id").ilike("description", f"%{job['description'][:50]}%").execute()
-            
+            # البحث بالعنوان لمنع التكرار
+            check = supabase.table("job_submissions").select("id").eq("title", job['title']).execute()
             if not check.data:
                 supabase.table("job_submissions").insert(job, returning="minimal").execute()
                 print(f"تمت إضافة: {job['title']}")
@@ -75,7 +70,8 @@ def save_to_supabase(jobs):
             print(f"خطأ في الإدخال: {e}")
 
 if __name__ == "__main__":
-    new_jobs = fetch_telegram_jobs()
+    delete_old_samples() # 1. حذف التجريبي
+    new_jobs = fetch_telegram_jobs() # 2. سحب الجديد
     if new_jobs:
         save_to_supabase(new_jobs)
     else:
