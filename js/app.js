@@ -51,7 +51,10 @@ function renderCard(ad) {
   const contact = ad.contact ? `<span>للتواصل: ${escapeHtml(ad.contact)}</span>` : '<span>التواصل عبر الجهة المعلنة</span>';
   const badges = [ad.governorate,ad.field,seeker ? ad.experience : (ad.type === 'حكومي' ? 'القطاع الحكومي' : 'القطاع الخاص'),ad.work_arrangement].filter(Boolean);
   const expiredLabel = seeker ? `متاح حتى ${formatDate(ad.deadline)}` : `آخر موعد ${formatDate(ad.deadline)}`;
-  return `<article class="card ${seeker ? 'seeker' : ''}"><div class="card-top"><span class="listing-badge">${seeker ? 'مطلوب وظيفة' : escapeHtml(ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص')}</span><time class="date-label">${escapeHtml(expiredLabel)}</time></div><h3>${escapeHtml(ad.title)}</h3><p class="card-org">${escapeHtml(seeker ? 'باحث عن عمل' : (ad.company || 'جهة معلنة'))}</p><div class="badges">${badges.map((badge) => `<span class="badge ${badge === 'القطاع الحكومي' ? 'gold' : ''}">${escapeHtml(badge)}</span>`).join('')}</div><p class="card-description">${escapeHtml(ad.description || '')}</p><div class="card-meta">${contact}${source}</div></article>`;
+  const description = String(ad.description || '');
+  const hasMore = description.length > 170;
+  const preview = hasMore ? `${description.slice(0, 170).trimEnd()}…` : description;
+  return `<article class="card ${seeker ? 'seeker' : ''}"><div class="card-top"><span class="listing-badge">${seeker ? 'مطلوب وظيفة' : escapeHtml(ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص')}</span><time class="date-label">${escapeHtml(expiredLabel)}</time></div><h3>${escapeHtml(ad.title)}</h3><p class="card-org">${escapeHtml(seeker ? 'باحث عن عمل' : (ad.company || 'جهة معلنة'))}</p><div class="badges">${badges.map((badge) => `<span class="badge ${badge === 'القطاع الحكومي' ? 'gold' : ''}">${escapeHtml(badge)}</span>`).join('')}</div><p class="card-description">${escapeHtml(preview)}</p>${hasMore ? `<button class="card-more" type="button" data-action="details" data-id="${escapeHtml(ad.id)}" aria-haspopup="dialog">اقرأ المزيد</button>` : ''}<div class="card-meta">${contact}${source}</div></article>`;
 }
 async function loadAds() {
   const today = localISODate();
@@ -170,6 +173,37 @@ fillSelect($('governorate'),GOVERNORATES,'اختر المحافظة');
 fillSelect($('field'),FIELDS,'اختر المجال');
 setFormType();
 loadAds();
+
+function openDetails(id) {
+  const ad = ads.find((item) => String(item.id) === String(id));
+  if (!ad) return;
+  const seeker = ad.listing_type === 'seeker';
+  $('detailsTitle').textContent = ad.title || 'تفاصيل الإعلان';
+  $('detailsMeta').textContent = [seeker ? 'مطلوب وظيفة' : (ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص'), ad.company, ad.governorate, ad.field].filter(Boolean).join(' · ');
+  $('detailsDescription').textContent = ad.description || '';
+  const source = $('detailsSource');
+  if (ad.source && /^https?:\/\//i.test(ad.source)) {
+    source.href = ad.source;
+    source.hidden = false;
+  } else {
+    source.hidden = true;
+    source.removeAttribute('href');
+  }
+  $('detailsModalBg').hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('closeDetails').focus();
+}
+function closeDetails() {
+  $('detailsModalBg').hidden = true;
+  document.body.style.overflow = '';
+}
+$('cardsContainer').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-action="details"]');
+  if (button) openDetails(button.dataset.id);
+});
+$('closeDetails').addEventListener('click', closeDetails);
+$('detailsModalBg').addEventListener('click', (event) => { if (event.target === $('detailsModalBg')) closeDetails(); });
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('detailsModalBg').hidden) closeDetails(); });
 
 function openContactModal() {
   $('contactForm').reset();

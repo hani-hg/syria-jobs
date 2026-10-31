@@ -15,3 +15,8 @@
 .message-body{margin:0;padding:12px;border-radius:9px;background:#f6f5f0;color:var(--ink);font-size:12px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:620px){.admin-tabs .inbox-tab{margin-inline-start:0}.message-card{padding:15px}.message-card-head{gap:8px}}
 #adminStats[hidden],#submissionsList[hidden]{display:none}
+
+
+.admin-header-actions{display:flex;align-items:center;gap:8px}
+.admin-return{text-decoration:none;white-space:nowrap}
+@media(max-width:620px){.admin-body .site-header{height:auto;min-height:58px;padding:8px 14px}.admin-header-actions{gap:6px}.admin-header-actions .btn{padding:8px 10px;font-size:11px}.admin-body .brand-mark{width:34px;height:34px}}

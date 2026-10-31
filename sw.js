@@ -1,4 +1,4 @@
-const CACHE = 'syria-jobs-v4';
+const CACHE = 'syria-jobs-v5';
 const ASSETS = ['/', '/index.html', '/css/style.css', '/js/app.js', '/favicon.svg', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
