@@ -37,14 +37,33 @@ async function loadSubmissions(){
 async function loadMessages(){
   if(!currentUser)return;
   setMessage($('#adminMessage'),'جارٍ تحميل الرسائل…');
-  const {data,error}=await client.from('messages').select('id,name,contact,message,created_at').order('created_at',{ascending:false});
+  const {data,error}=await client.from('messages').select('id,name,contact,message,created_at,is_read').order('created_at',{ascending:false});
   if(error){$('#messagesList').innerHTML='<div class="admin-empty">تعذر تحميل صندوق الوارد. تأكد من تطبيق migration-contact-messages.sql.</div>';setMessage($('#adminMessage'),'تعذر تحميل الرسائل: '+error.message,true);return;}
   renderMessages(data||[]);
   setMessage($('#adminMessage'),`تم تحميل ${(data||[]).length} رسالة.`);
 }
 function renderMessages(messages){
   if(!messages.length){$('#messagesList').innerHTML='<div class="admin-empty">لا توجد رسائل واردة حتى الآن.</div>';return;}
-  $('#messagesList').innerHTML=messages.map((message)=>`<article class="message-card"><div class="message-card-head"><div><span class="message-label">رسالة واردة</span><h2>${escapeHtml(message.name)}</h2></div><time>${escapeHtml(formatDate(message.created_at))}</time></div><p class="message-contact"><b>وسيلة التواصل:</b> ${escapeHtml(message.contact)}</p><p class="message-body">${escapeHtml(message.message)}</p></article>`).join('');
+  $('#messagesList').innerHTML=messages.map((message)=>`<article class="message-card ${message.is_read?'is-read':'is-unread'}"><div class="message-card-head"><div><span class="message-label ${message.is_read?'read':'unread'}">${message.is_read?'مقروءة':'غير مقروءة'}</span><h2>${escapeHtml(message.name)}</h2></div><time>${escapeHtml(formatDate(message.created_at))}</time></div><p class="message-contact"><b>وسيلة التواصل:</b> ${escapeHtml(message.contact)}</p><p class="message-body">${escapeHtml(message.message)}</p><div class="message-actions"><button class="btn btn-outline" type="button" data-message-action="toggle-read" data-id="${escapeHtml(message.id)}" data-read="${message.is_read?'true':'false'}">${message.is_read?'وضع كغير مقروءة':'تحديد كمقروءة'}</button><button class="btn btn-delete" type="button" data-message-action="delete" data-id="${escapeHtml(message.id)}">حذف الرسالة</button></div></article>`).join('');
+}
+async function setMessageRead(id,isRead){
+  try{
+    const {data,error}=await client.from('messages').update({is_read:isRead}).eq('id',id).select('id').maybeSingle();
+    if(error)throw error;
+    if(!data){showToast('لم تتغير الحالة. تحقق من صلاحيات المشرف وترحيل قاعدة البيانات.',true);return;}
+    showToast(isRead?'تم تحديد الرسالة كمقروءة.':'تم وضع الرسالة كغير مقروءة.');
+    await loadMessages();
+  }catch(error){showToast('تعذر تحديث حالة الرسالة: '+(error.message||'خطأ اتصال.'),true);}
+}
+async function deleteMessage(id){
+  if(!confirm('سيتم حذف الرسالة نهائيًا ولا يمكن استعادتها. هل تريد المتابعة؟'))return;
+  try{
+    const {data,error}=await client.from('messages').delete().eq('id',id).select('id').maybeSingle();
+    if(error)throw error;
+    if(!data){showToast('لم تُحذف الرسالة. تحقق من صلاحيات المشرف وترحيل قاعدة البيانات.',true);return;}
+    showToast('تم حذف الرسالة.');
+    await loadMessages();
+  }catch(error){showToast('تعذر حذف الرسالة: '+(error.message||'خطأ اتصال.'),true);}
 }
 function setDashboardView(view,status=currentStatus){
   currentView=view;
@@ -79,6 +98,7 @@ $('#loginForm').addEventListener('submit',async(event)=>{event.preventDefault();
 $('#signOutBtn').addEventListener('click',async()=>{await client.auth.signOut();showLoggedOut('تم تسجيل الخروج.');});
 $('#refreshBtn').addEventListener('click',()=>currentView==='messages'?loadMessages():loadSubmissions());$('#addJobBtn').addEventListener('click',()=>openEditor());$('#closeEditor').addEventListener('click',closeEditor);$('#editorBackdrop').addEventListener('click',(event)=>{if(event.target===$('#editorBackdrop'))closeEditor();});$('#editorForm').addEventListener('submit',saveEditor);
 $('#submissionsList').addEventListener('click',(event)=>{const button=event.target.closest('button[data-action]');if(!button)return;if(button.dataset.action==='edit')openEditor(allItems.find((item)=>String(item.id)===button.dataset.id));else if(button.dataset.action==='delete')deleteSubmission(button.dataset.id);else updateStatus(button.dataset.id,button.dataset.action);});
+$('#messagesList').addEventListener('click',(event)=>{const button=event.target.closest('button[data-message-action]');if(!button)return;button.disabled=true;if(button.dataset.messageAction==='delete')deleteMessage(button.dataset.id).finally(()=>{button.disabled=false;});else if(button.dataset.messageAction==='toggle-read')setMessageRead(button.dataset.id,button.dataset.read!=='true').finally(()=>{button.disabled=false;});});
 document.querySelectorAll('.admin-tabs button[data-status]').forEach((button)=>button.addEventListener('click',()=>setDashboardView('submissions',button.dataset.status)));
 $('[data-view=messages]').addEventListener('click',()=>setDashboardView('messages'));
 document.addEventListener('keydown',(event)=>{if(event.key==='Escape')closeEditor();});
