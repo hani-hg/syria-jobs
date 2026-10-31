@@ -6,6 +6,7 @@
 alter table public.job_submissions enable row level security;
 alter table public.messages enable row level security;
 alter table public.admin_users enable row level security;
+alter table public.messages add column if not exists is_read boolean not null default false;
 
 -- إزالة سياسات قديمة متعارضة، خصوصًا سياسة قراءة الرسائل لأي مستخدم مسجل وسياسات الإدخال العامة.
 drop policy if exists "public can submit pending jobs" on public.job_submissions;
@@ -19,6 +20,8 @@ drop policy if exists "Admins can read messages" on public.messages;
 drop policy if exists "Allow public inserts" on public.messages;
 drop policy if exists "Public can insert messages" on public.messages;
 drop policy if exists "admins can read contact messages" on public.messages;
+drop policy if exists "admins can update contact message read status" on public.messages;
+drop policy if exists "admins can delete contact messages" on public.messages;
 
 -- إعلانات الوظائف: الزوار يرسلون طلبات معلقة ويقرؤون المنشور غير المنتهي فقط.
 create policy "public can submit pending jobs"
@@ -44,6 +47,12 @@ create policy "admins can read all jobs"
 create policy "admins can read contact messages"
   on public.messages for select to authenticated
   using (public.is_admin());
+create policy "admins can update contact message read status"
+  on public.messages for update to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+create policy "admins can delete contact messages"
+  on public.messages for delete to authenticated
+  using (public.is_admin());
 
 -- مدراء الموقع لا يستطيع المستخدمون قراءة إلا سجلهم الخاص للتحقق من عضوية الإدارة.
 create policy "admins can read own admin row"
@@ -57,7 +66,8 @@ grant select, insert, update, delete on table public.job_submissions to authenti
 grant all on table public.job_submissions to service_role;
 
 revoke all on table public.messages from public, anon, authenticated;
-grant select on table public.messages to authenticated;
+grant select, delete on table public.messages to authenticated;
+grant update (is_read) on table public.messages to authenticated;
 grant insert, select on table public.messages to service_role;
 
 grant usage on schema public to anon, authenticated, service_role;

@@ -7,13 +7,19 @@
 .messages-list{display:grid;gap:12px}
 .messages-list[hidden],#messagesList[hidden]{display:none}
 .message-card{padding:18px;border:1px solid var(--line);border-right:4px solid var(--green);border-radius:13px;background:#fff}
+.message-card.is-unread{background:#fbfdfb;border-right-color:var(--forest)}
 .message-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
 .message-card-head h2{margin:6px 0 0;color:var(--forest);font-size:16px}
 .message-card-head time{color:var(--muted);font-size:11px}
 .message-label{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--mint);color:var(--forest);font-size:10px;font-weight:900}
+.message-label.read{background:#f0f0ec;color:var(--muted)}
+.message-label.unread{background:#dfece4;color:var(--forest)}
 .message-contact{margin:12px 0 8px;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
 .message-body{margin:0;padding:12px;border-radius:9px;background:#f6f5f0;color:var(--ink);font-size:12px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
-@media(max-width:620px){.admin-tabs .inbox-tab{margin-inline-start:0}.message-card{padding:15px}.message-card-head{gap:8px}}
+.message-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.message-actions .btn{padding:8px 12px;font-size:11px}
+.message-actions .btn:disabled{opacity:.55;cursor:wait}
+@media(max-width:620px){.admin-tabs .inbox-tab{margin-inline-start:0}.message-card{padding:15px}.message-card-head{gap:8px}.message-actions .btn{flex:1 1 calc(50% - 8px)}}
 #adminStats[hidden],#submissionsList[hidden]{display:none}
 
 
