@@ -26,7 +26,7 @@
 
 ## إصلاحات التحقق من 2026-10-31
 
-- يدعم `/api/messages` مفتاح `SUPABASE_SERVICE_ROLE_KEY` أو `SUPABASE_SECRET_KEY` أو `SUPABASE_LEGACY_SERVICE_ROLE_KEY`. المفتاح القديم JWT الذي يحمل `role=service_role` يرسل في `apikey` و`Authorization: Bearer`؛ المفتاح الجديد `sb_secret_…` يرسل في `apikey` فقط، لأن إرساله كـ Bearer يؤدي إلى رفض JWT.
+- يدعم `/api/messages` مفتاح `SUPABASE_SERVICE_ROLE_KEY` أو `SUPABASE_SECRET_KEY` أو `SUPABASE_LEGACY_SERVICE_ROLE_KEY`. يقبل `SUPABASE_KEY` كاسم احتياطي فقط إذا كان مفتاح خدمة `service_role` أو `sb_secret_…`؛ يرفض مفاتيح anon/publishable. مفتاح legacy JWT يرسل في `apikey` و`Authorization: Bearer`، بينما المفتاح الجديد `sb_secret_…` يرسل في `apikey` فقط لأن إرساله كـ Bearer يؤدي إلى رفض JWT.
 - بعد ضبط أحد مفاتيح الخادم في Vercel وإعادة النشر، اختبر نموذج التواصل وتحقق من ظهور رسالة الاختبار في صندوق الوارد. لا تستخدم anon/publishable key مكان مفتاح الخادم.
 - فحص Supabase المباشر وجد أن RLS كان **معطّلًا على `job_submissions`**، وأن سياسات `messages` القديمة كانت تسمح بإدخال عام وقراءة لأي مستخدم مصادق عليه. الملف `migration-repair-rls.sql` يعرض السياسات المقترحة: الإعلانات العامة المنشورة فقط والطلبات الجديدة المعلقة فقط، وصلاحيات التعديل للمشرفين؛ الرسائل تقرأ للمشرف فقط ويكتبها API عبر مفتاح خادمي. **لم يُطبّق هذا الملف على قاعدة الإنتاج**؛ راجعه ووافق عليه قبل تشغيله.
 - فحص التصنيف وجد إعلانًا حكوميًا واحدًا في جدول الوظائف يحمل كلمة «وزارة» وكان مصنفًا «خاصًا»؛ تم تصحيح نوع هذا السجل الواحد إلى «حكومي». التصنيف الجديد في `bot.py` يطبع صيغ الحروف العربية ويبحث في عنوان الرسالة ونصها.
