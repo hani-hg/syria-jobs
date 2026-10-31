@@ -14,6 +14,7 @@ create table if not exists public.job_submissions (
   experience text check (experience is null or char_length(experience) <= 120),
   work_arrangement text check (work_arrangement is null or char_length(work_arrangement) <= 80),
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  view_count bigint not null default 0 constraint job_submissions_view_count_check check (view_count >= 0),
   created_at timestamptz not null default now(),
   constraint job_submissions_listing_type_check check (listing_type in ('job','seeker')),
   constraint job_submissions_source_by_kind_check check (listing_type = 'seeker' or (source is not null and source ~* '^https?://'))
@@ -23,6 +24,9 @@ alter table public.job_submissions add column if not exists listing_type text no
 alter table public.job_submissions add column if not exists experience text;
 alter table public.job_submissions add column if not exists work_arrangement text;
 alter table public.job_submissions add column if not exists contact text;
+alter table public.job_submissions add column if not exists view_count bigint not null default 0;
+alter table public.job_submissions drop constraint if exists job_submissions_view_count_check;
+alter table public.job_submissions add constraint job_submissions_view_count_check check (view_count >= 0);
 alter table public.job_submissions alter column source drop not null;
 alter table public.job_submissions drop constraint if exists job_submissions_source_check;
 alter table public.job_submissions drop constraint if exists job_submissions_listing_type_check;
@@ -54,6 +58,28 @@ as $$
 $$;
 revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to authenticated;
+
+create or replace function public.increment_listing_view(p_listing_id uuid)
+returns bigint
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  updated_count bigint;
+begin
+  update public.job_submissions
+  set view_count = view_count + 1
+  where id = p_listing_id
+    and status = 'approved'
+    and deadline >= current_date
+  returning view_count into updated_count;
+
+  return coalesce(updated_count, 0);
+end;
+$function$;
+revoke all on function public.increment_listing_view(uuid) from public, anon, authenticated;
+grant execute on function public.increment_listing_view(uuid) to anon, authenticated;
 
 drop policy if exists "public can submit pending jobs" on public.job_submissions;
 create policy "public can submit pending jobs" on public.job_submissions for insert to anon, authenticated with check (status = 'pending');

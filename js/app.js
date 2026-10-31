@@ -22,6 +22,10 @@ function formatDate(value) {
   const date = new Date(`${String(value).slice(0,10)}T12:00:00`);
   return new Intl.DateTimeFormat('ar-SY', {day:'numeric',month:'short',year:'numeric'}).format(date);
 }
+function formatCount(value) {
+  const count = Number(value || 0);
+  return Number.isFinite(count) ? count.toLocaleString('ar-SY') : '0';
+}
 function isExpired(value) { return Boolean(value && String(value).slice(0,10) < localISODate()); }
 function getSectionAds() {
   const conf = SECTION[activeSection];
@@ -54,7 +58,7 @@ function renderCard(ad) {
   const description = String(ad.description || '');
   const hasMore = description.length > 170;
   const preview = hasMore ? `${description.slice(0, 170).trimEnd()}…` : description;
-  return `<article class="card ${seeker ? 'seeker' : ''}"><div class="card-top"><span class="listing-badge">${seeker ? 'مطلوب وظيفة' : escapeHtml(ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص')}</span><time class="date-label">${escapeHtml(expiredLabel)}</time></div><h3>${escapeHtml(ad.title)}</h3><p class="card-org">${escapeHtml(seeker ? 'باحث عن عمل' : (ad.company || 'جهة معلنة'))}</p><div class="badges">${badges.map((badge) => `<span class="badge ${badge === 'القطاع الحكومي' ? 'gold' : ''}">${escapeHtml(badge)}</span>`).join('')}</div><p class="card-description">${escapeHtml(preview)}</p>${hasMore ? `<button class="card-more" type="button" data-action="details" data-id="${escapeHtml(ad.id)}" aria-haspopup="dialog">اقرأ المزيد</button>` : ''}<div class="card-meta">${contact}${source}</div></article>`;
+  return `<article class="card ${seeker ? 'seeker' : ''}"><div class="card-top"><span class="listing-badge">${seeker ? 'مطلوب وظيفة' : escapeHtml(ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص')}</span><time class="date-label">${escapeHtml(expiredLabel)}</time></div><h3>${escapeHtml(ad.title)}</h3><p class="card-org">${escapeHtml(seeker ? 'باحث عن عمل' : (ad.company || 'جهة معلنة'))}</p><div class="badges">${badges.map((badge) => `<span class="badge ${badge === 'القطاع الحكومي' ? 'gold' : ''}">${escapeHtml(badge)}</span>`).join('')}</div><p class="card-description">${escapeHtml(preview)}</p><button class="card-more" type="button" data-action="details" data-id="${escapeHtml(ad.id)}" aria-haspopup="dialog">${hasMore ? 'اقرأ المزيد' : 'تفاصيل الإعلان'}</button><div class="card-meta">${contact}<span class="card-views" data-view-id="${escapeHtml(ad.id)}">المشاهدات: ${formatCount(ad.view_count)}</span>${source}</div></article>`;
 }
 async function loadAds() {
   const today = localISODate();
@@ -177,9 +181,16 @@ loadAds();
 function openDetails(id) {
   const ad = ads.find((item) => String(item.id) === String(id));
   if (!ad) return;
+  const viewKey = `syria-jobs-viewed:${ad.id}`;
+  let shouldCount = true;
+  try {
+    shouldCount = sessionStorage.getItem(viewKey) !== '1';
+    if (shouldCount) sessionStorage.setItem(viewKey, '1');
+  } catch (_) {}
   const seeker = ad.listing_type === 'seeker';
   $('detailsTitle').textContent = ad.title || 'تفاصيل الإعلان';
   $('detailsMeta').textContent = [seeker ? 'مطلوب وظيفة' : (ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص'), ad.company, ad.governorate, ad.field].filter(Boolean).join(' · ');
+  $('detailsViews').textContent = `المشاهدات: ${formatCount(ad.view_count)}`;
   $('detailsDescription').textContent = ad.description || '';
   const source = $('detailsSource');
   if (ad.source && /^https?:\/\//i.test(ad.source)) {
@@ -192,6 +203,22 @@ function openDetails(id) {
   $('detailsModalBg').hidden = false;
   document.body.style.overflow = 'hidden';
   $('closeDetails').focus();
+  if (shouldCount) incrementListingView(ad, viewKey);
+}
+async function incrementListingView(ad, viewKey) {
+  try {
+    const {data,error} = await db.rpc('increment_listing_view', {p_listing_id: ad.id});
+    if (error) throw error;
+    ad.view_count = Number(data) || (Number(ad.view_count) || 0) + 1;
+    const label = `المشاهدات: ${formatCount(ad.view_count)}`;
+    $('detailsViews').textContent = label;
+    document.querySelectorAll('.card-views').forEach((element) => {
+      if (element.dataset.viewId === String(ad.id)) element.textContent = label;
+    });
+  } catch (error) {
+    try { sessionStorage.removeItem(viewKey); } catch (_) {}
+    console.warn('تعذر تحديث عداد مشاهدات الإعلان. تحقق من تطبيق ترحيل قاعدة البيانات.', error.message || error);
+  }
 }
 function closeDetails() {
   $('detailsModalBg').hidden = true;
