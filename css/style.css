@@ -18,3 +18,14 @@
 .contact-modal .field-label textarea{min-height:125px}
 .contact-modal .field-label input{min-height:43px}
 @media(max-width:760px){.site-header{height:58px;padding:0 14px}.header-brand-group{gap:8px}.admin-gateway{width:38px;height:38px;border-radius:12px}.admin-gateway svg{width:21px;height:21px}.btn-header-add{padding:9px 12px;font-size:12px}.site-footer{padding-bottom:30px;gap:10px}.site-footer>span{order:3;width:100%}}
+
+
+/* Compact job cards and full-description dialog */
+.card-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;margin-bottom:5px;line-height:1.75}
+.card-more{display:inline-block;margin:0 0 11px;padding:0;border:0;background:none;color:var(--forest);font-size:11px;font-weight:900;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.card-more:hover{color:var(--green)}
+.details-modal{max-width:620px}
+.details-meta{margin:10px 0;padding:9px 11px;border-radius:8px;background:#f4f6f2;color:var(--muted);font-size:11px}
+.details-description{max-height:55dvh;overflow:auto;margin:12px 0;color:var(--ink);font-size:13px;line-height:2;white-space:pre-wrap;overflow-wrap:anywhere}
+.details-source{display:inline-block;margin-top:8px;color:var(--forest);font-size:12px;font-weight:900;text-decoration:none}
+.details-source[hidden]{display:none}

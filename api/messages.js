@@ -63,27 +63,42 @@ module.exports = async function handler(request, response) {
   if (!allowRequest(ip)) return sendJson(response, 429, { error: 'وصلت رسائل كثيرة من اتصالك. حاول بعد قليل.' });
 
   const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_LEGACY_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) {
-    console.error('Message storage is not configured.');
+    console.error('Message storage is not configured:', JSON.stringify({ hasUrl: Boolean(supabaseUrl), hasServiceKey: Boolean(serviceKey) }));
     return sendJson(response, 503, { error: 'خدمة الرسائل غير مهيأة بعد.' });
+  }
+
+  let headers = {
+    apikey: serviceKey,
+    'Content-Type': 'application/json',
+    Prefer: 'return=representation'
+  };
+  if (serviceKey.startsWith('eyJ')) {
+    let role = '';
+    try { role = JSON.parse(Buffer.from(serviceKey.split('.')[1], 'base64url').toString('utf8')).role || ''; } catch {}
+    if (role !== 'service_role') {
+      console.error('Message storage key is not a legacy service_role JWT.');
+      return sendJson(response, 503, { error: 'مفتاح حفظ الرسائل غير صالح. تحقق من إعداد SUPABASE_SERVICE_ROLE_KEY.' });
+    }
+    headers.Authorization = `Bearer ${serviceKey}`;
+  } else if (!serviceKey.startsWith('sb_secret_')) {
+    console.error('Message storage key format is not recognized.');
+    return sendJson(response, 503, { error: 'صيغة مفتاح Supabase غير مدعومة.' });
   }
 
   let savedMessage;
   try {
     const databaseResponse = await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/messages?select=id,created_at`, {
       method: 'POST',
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation'
-      },
+      headers,
       body: JSON.stringify({ name, contact, message }),
       signal: AbortSignal.timeout(10000)
     });
     if (!databaseResponse.ok) {
-      console.error('Message insert failed with status:', databaseResponse.status);
+      let errorCode = 'unknown';
+      try { errorCode = (await databaseResponse.json()).code || 'unknown'; } catch {}
+      console.error('Message insert failed:', JSON.stringify({ status: databaseResponse.status, code: String(errorCode).slice(0, 80) }));
       return sendJson(response, 502, { error: 'تعذر حفظ رسالتك الآن. حاول مجددًا لاحقًا.' });
     }
     const rows = await databaseResponse.json();

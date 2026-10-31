@@ -1,13 +1,53 @@
 import os
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client, Client
+try:
+    from supabase import create_client, Client
+except ImportError:
+    create_client = None
+    Client = object
 from datetime import datetime, timedelta
+import re
+import unicodedata
 
 # جلب المفاتيح السرية من إعدادات GitHub
 URL = os.environ.get("SUPABASE_URL")
 KEY = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(URL, KEY)
+supabase: Client = create_client(URL, KEY) if URL and KEY and create_client else None
+
+GOVERNMENT_KEYWORDS = (
+    "وزارة", "وزاره", "الوزارات", "مديرية", "مديريه", "المديريات",
+    "هيئة", "هيئه", "الهيئات", "مجلس الوزراء", "مجلس المحافظة",
+    "الحكومة", "حكومة", "حكومي", "حكومية", "القطاع العام", "قطاع عام",
+    "جهة حكومية", "جهة عامة", "الجمهورية العربية السورية", "رئاسة الجمهورية",
+    "رئاسة مجلس الوزراء", "مؤسسة عامة", "المؤسسات العامة"
+)
+GOVERNMENT_ENTITY_KEYWORDS = (
+    "وزارة", "الوزارات", "مديرية", "المديريات", "هيئة", "الهيئات",
+    "مجلس الوزراء", "مجلس المحافظة", "الحكومة", "حكومة",
+    "القطاع العام", "قطاع عام", "جهة حكومية", "جهة عامة",
+    "الجمهورية العربية السورية", "رئاسة الجمهورية", "رئاسة مجلس الوزراء",
+    "مؤسسة عامة", "المؤسسات العامة"
+)
+
+
+def normalize_arabic(value):
+    text = unicodedata.normalize("NFKC", value or "")
+    text = text.replace("ـ", "")
+    text = "".join(char for char in text if unicodedata.category(char) != "Mn")
+    text = text.translate(str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ى": "ي", "ة": "ه"}))
+    return re.sub(r"\s+", " ", text).strip().casefold()
+
+
+def classify_job_type(text):
+    normalized = normalize_arabic(text)
+    # Do not infer public-sector employment from an explicit negative statement alone.
+    if any(term in normalized for term in ("غير حكومي", "غير حكوميه", "لا يتبع الحكومة", "لا تتبع الحكومة")):
+        if not any(normalize_arabic(keyword) in normalized for keyword in GOVERNMENT_ENTITY_KEYWORDS):
+            return "خاص"
+    if any(normalize_arabic(keyword) in normalized for keyword in GOVERNMENT_KEYWORDS):
+        return "حكومي"
+    return "خاص"
 
 def delete_old_samples():
     print("جاري حذف الإعلانات التجريبية...")
@@ -31,8 +71,6 @@ def fetch_telegram_jobs():
         messages = soup.find_all('div', class_='tgme_widget_message_text')
         jobs = []
         
-        # الكلمات المفتاحية التي تدل على أن الوظيفة حكومية
-        gov_keywords = ["وزارة", "مديرية", "مجلس", "هيئة", "حكومة", "الجمهورية العربية السورية", "وزير", "مناقصة"]
         
         for msg in messages[-5:]: # آخر 5 رسائل
             text = msg.get_text(separator='\n').strip()
@@ -40,8 +78,8 @@ def fetch_telegram_jobs():
 
             title = text.split('\n')[0][:100] # أول سطر كعنوان
             
-            # تحديد نوع الوظيفة تلقائياً
-            job_type = "حكومي" if any(word in text for word in gov_keywords) else "خاص"
+            # تصنيف الجهة بعد تطبيع الكتابة العربية؛ الخاص هو الافتراضي فقط عند غياب قرائن القطاع العام.
+            job_type = classify_job_type(text)
             
             job = {
                 "title": title,
@@ -62,6 +100,8 @@ def fetch_telegram_jobs():
         return []
 
 def save_to_supabase(jobs):
+    if supabase is None:
+        raise RuntimeError("لم يتم ضبط SUPABASE_URL وSUPABASE_KEY")
     for job in jobs:
         try:
             # البحث بالعنوان لمنع التكرار
