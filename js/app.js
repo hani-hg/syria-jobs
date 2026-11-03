@@ -253,3 +253,70 @@ $('cancelContact').addEventListener('click', closeContactModal);
 $('contactModalBg').addEventListener('click', (event) => { if (event.target === $('contactModalBg')) closeContactModal(); });
 $('contactForm').addEventListener('submit', submitContactMessage);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('contactModalBg').hidden) closeContactModal(); });
+
+
+// Homepage banner slider: reads up to three public images from Supabase.
+const BANNER_TABLE = 'homepage_banners';
+const BANNER_INTERVAL_MS = 7000;
+let bannerSlides = [];
+let bannerIndex = 0;
+let bannerTimer = null;
+function renderBanner() {
+  const track = $('bannerTrack');
+  const dots = $('bannerDots');
+  if (!track || !dots) return;
+  const slider = $('bannerSlider');
+  if (!bannerSlides.length) {
+    track.innerHTML = '<div class="banner-placeholder"><span>وظائف سوريا</span><strong>فرص العمل في سوريا،<br>بمكان واحد.</strong><small>وظائف حكومية وخاصة، ومساحة للباحثين عن عمل</small></div>';
+    dots.innerHTML = '';
+    $('bannerPrev').hidden = true;
+    $('bannerNext').hidden = true;
+    slider.classList.add('banner-empty');
+    stopBannerRotation();
+    return;
+  }
+  slider.classList.remove('banner-empty');
+  track.innerHTML = bannerSlides.map((slide, index) => `<div class="banner-slide${index === bannerIndex ? ' active' : ''}" aria-hidden="${index !== bannerIndex}"><img src="${escapeHtml(slide.image_url)}" alt="${escapeHtml(slide.alt_text || `صورة مميزة ${index + 1}`)}" ${index === bannerIndex ? 'fetchpriority="high"' : 'loading="lazy"'}></div>`).join('');
+  dots.innerHTML = bannerSlides.map((slide, index) => `<button type="button" class="banner-dot${index === bannerIndex ? ' active' : ''}" data-banner-index="${index}" aria-label="عرض الصورة ${index + 1}" aria-current="${index === bannerIndex ? 'true' : 'false'}"></button>`).join('');
+  $('bannerPrev').hidden = bannerSlides.length < 2;
+  $('bannerNext').hidden = bannerSlides.length < 2;
+  dots.hidden = bannerSlides.length < 2;
+  startBannerRotation();
+}
+async function loadBannerSlides() {
+  const { data, error } = await db.from(BANNER_TABLE).select('slot,image_url,alt_text').order('slot', { ascending: true }).limit(3);
+  if (error) {
+    console.warn('تعذر تحميل صور البانر؛ ستظهر المساحة الافتراضية.', error.message);
+    return;
+  }
+  bannerSlides = (data || []).filter((item) => {
+    try { return new URL(item.image_url).protocol === 'https:'; } catch { return false; }
+  });
+  bannerIndex = 0;
+  renderBanner();
+}
+function goToBanner(index) {
+  if (!bannerSlides.length) return;
+  bannerIndex = (index + bannerSlides.length) % bannerSlides.length;
+  renderBanner();
+}
+function stopBannerRotation() {
+  if (bannerTimer) clearInterval(bannerTimer);
+  bannerTimer = null;
+}
+function startBannerRotation() {
+  stopBannerRotation();
+  if (bannerSlides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  bannerTimer = setInterval(() => { bannerIndex = (bannerIndex + 1) % bannerSlides.length; renderBanner(); }, BANNER_INTERVAL_MS);
+}
+$('bannerPrev').addEventListener('click', () => goToBanner(bannerIndex - 1));
+$('bannerNext').addEventListener('click', () => goToBanner(bannerIndex + 1));
+$('bannerDots').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-banner-index]');
+  if (button) goToBanner(Number(button.dataset.bannerIndex));
+});
+$('bannerSlider').addEventListener('mouseenter', stopBannerRotation);
+$('bannerSlider').addEventListener('mouseleave', startBannerRotation);
+$('bannerSlider').addEventListener('focusin', stopBannerRotation);
+$('bannerSlider').addEventListener('focusout', (event) => { if (!event.currentTarget.contains(event.relatedTarget)) startBannerRotation(); });
+loadBannerSlides();

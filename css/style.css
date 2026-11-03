@@ -29,3 +29,28 @@
 .details-description{max-height:55dvh;overflow:auto;margin:12px 0;color:var(--ink);font-size:13px;line-height:2;white-space:pre-wrap;overflow-wrap:anywhere}
 .details-source{display:inline-block;margin-top:8px;color:var(--forest);font-size:12px;font-weight:900;text-decoration:none}
 .details-source[hidden]{display:none}
+
+
+/* Full-bleed home banner slider */
+.banner-slider{position:relative;width:100%;height:clamp(230px,32vw,430px);overflow:hidden;background:#173b31;color:#fff;isolation:isolate}
+.banner-track{position:absolute;inset:0}
+.banner-slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .65s ease}
+.banner-slide.active{opacity:1;visibility:visible;z-index:1}
+.banner-slide img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.banner-slide:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,28,21,.08),rgba(8,28,21,.08) 42%,rgba(8,28,21,.62))}
+.banner-placeholder{height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding-inline:max(calc((100vw - 1120px)/2),7vw);background:radial-gradient(ellipse at 18% 110%,rgba(197,161,88,.34),transparent 35%),linear-gradient(112deg,#245446,#173b31 62%,#102d25)}
+.banner-placeholder span{font-size:12px;color:#e1cf9e;font-weight:900;letter-spacing:.05em}
+.banner-placeholder strong{font-size:clamp(27px,4.2vw,47px);line-height:1.4;margin:9px 0;font-weight:1000}
+.banner-placeholder small{font-size:13px;color:rgba(255,255,255,.8)}
+.banner-arrow{position:absolute;z-index:3;top:50%;transform:translateY(-50%);width:44px;height:44px;border:1px solid rgba(255,255,255,.65);border-radius:50%;background:rgba(16,45,37,.58);color:#fff;font-size:32px;line-height:1;display:grid;place-items:center;backdrop-filter:blur(5px);cursor:pointer;transition:background .2s,transform .2s}
+.banner-arrow:hover{background:var(--forest);transform:translateY(-50%) scale(1.06)}
+.banner-prev{right:22px}.banner-next{left:22px}
+.banner-dots{position:absolute;z-index:4;bottom:15px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:7px 11px;border-radius:99px;background:rgba(15,34,28,.42);backdrop-filter:blur(5px)}
+.banner-dots[hidden]{display:none}
+.banner-dot{width:8px;height:8px;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.64);cursor:pointer;transition:width .2s,background .2s}
+.banner-dot.active{width:22px;background:#fff}
+.banner-arrow[hidden]{display:none}
+@media(max-width:760px){.banner-slider{height:clamp(205px,55vw,330px)}.banner-placeholder{padding-inline:24px}.banner-placeholder strong{font-size:clamp(25px,7vw,36px)}.banner-placeholder small{max-width:80%;font-size:11px}.banner-arrow{width:36px;height:36px;font-size:27px}.banner-prev{right:12px}.banner-next{left:12px}.banner-dots{bottom:10px}}
+@media(prefers-reduced-motion:reduce){.banner-slide,.banner-dot{transition:none}}
+
+.banner-slider+.content-shell{margin:20px auto 50px}
