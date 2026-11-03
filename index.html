@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#173b31">
   <meta name="description" content="وظائف حكومية وخاصة وإعلانات الباحثين عن عمل في سوريا، بمصدر واضح ومراجعة قبل النشر.">
   <title>وظائف سوريا | فرص العمل وطلبات الباحثين</title>
-  
+
   <!-- بداية الكود المضاف لاسم الموقع في جوجل -->
   <meta property="og:site_name" content="وظائف سوريا" />
   <meta property="og:image" content="https://jobs-syria-2026.vercel.app/assets/brand-mark.png" />
@@ -45,9 +45,13 @@
     <button class="btn btn-header-add" type="button" data-open-form>أضف إعلانًا</button>
   </header>
   <main>
-    <section class="hero" aria-labelledby="heroTitle">
-      <div class="hero-copy"><span class="eyebrow">منصة سورية مستقلة</span><h1 id="heroTitle">فرص العمل في سوريا، <span>بمكان واحد.</span></h1><p>وظائف حكومية وخاصة، ومساحة للباحثين عن عمل. إعلانات واضحة، ومراجعة قبل النشر.</p><button class="btn btn-light" type="button" data-open-form>أضف إعلانًا للمراجعة <span aria-hidden="true">←</span></button></div>
-      <div class="hero-stamp" aria-hidden="true"><span>سوريا</span><b>عمل<br>وفرص</b><i></i></div><div class="hero-line" aria-hidden="true"></div>
+    <section class="banner-slider" id="bannerSlider" aria-label="إعلانات وصور مميزة" aria-roledescription="عارض شرائح">
+      <div class="banner-track" id="bannerTrack" aria-live="polite">
+        <div class="banner-placeholder"><span>وظائف سوريا</span><strong>فرص العمل في سوريا،<br>بمكان واحد.</strong><small>وظائف حكومية وخاصة، ومساحة للباحثين عن عمل</small></div>
+      </div>
+      <button class="banner-arrow banner-prev" id="bannerPrev" type="button" aria-label="الصورة السابقة" hidden>‹</button>
+      <button class="banner-arrow banner-next" id="bannerNext" type="button" aria-label="الصورة التالية" hidden>›</button>
+      <div class="banner-dots" id="bannerDots" role="group" aria-label="اختيار صورة البانر"></div>
     </section>
     <section class="content-shell" aria-label="إعلانات العمل">
       <nav class="section-tabs" aria-label="أقسام الإعلانات" role="tablist">
