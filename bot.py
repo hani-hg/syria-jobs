@@ -10,26 +10,30 @@ URL = os.environ.get("SUPABASE_URL")
 KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(URL, KEY)
 
-# القنوات الأربع
 CHANNELS = [
-    "wazafne175",   # وظفني
-    "syrjob",       # وظائف سوريا
-    "Jobs_Bank_Syr",# بنك الوظائف
-    "SyMOAD"        # وزارة التنمية الإدارية
+    "wazafne175", "syrjob", "Jobs_Bank_Syr", "SyMOAD"
 ]
 
+def clean_text(text):
+    """دالة لتنظيف النص من المشاهدات والهاشتاقات"""
+    # حذف سطر المشاهدات
+    text = re.sub(r'المشاهدات:\s*\d+', '', text)
+    # حذف الهاشتاقات
+    text = re.sub(r'#\S+', '', text)
+    # حذف الأسطر الفارغة الزائدة
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    return '\n'.join(lines)
+
 def clean_title(text):
-    """دالة لاستخراج عنوان نظيف من النص، وتجاهل الهاشتاقات والرموز"""
+    """استخراج عنوان نظيف"""
     lines = text.split('\n')
     for line in lines:
         line = line.strip()
-        # تجاهل السطر إذا كان فارغاً، أو يبدأ بـ #، أو رموز تعبيرية، أو قصير جداً
-        if line and not line.startswith('#') and len(line) > 5:
-            # إزالة الرموز التعبيرية من بداية السطر
+        if line and not line.startswith('#') and len(line) > 10:
             cleaned = re.sub(r'^[^\w\u0600-\u06FF]+', '', line)
             if cleaned:
-                return cleaned[:100] # أول 100 حرف
-    return "إعلان وظيفة" # عنوان افتراضي إذا لم نجد شيئاً
+                return cleaned[:100]
+    return "إعلان وظيفة"
 
 def fetch_telegram_jobs():
     print("بدء عملية السحب...")
@@ -46,14 +50,14 @@ def fetch_telegram_jobs():
             messages = soup.find_all('div', class_='tgme_widget_message_text')
             
             for msg in messages[-3:]:
-                text = msg.get_text(separator='\n').strip()
-                if len(text) < 30: continue
+                raw_text = msg.get_text(separator='\n').strip()
+                if len(raw_text) < 30: continue
 
-                # استخراج عنوان نظيف
-                title = clean_title(text)
+                # تنظيف النص قبل الحفظ
+                cleaned_text = clean_text(raw_text)
+                title = clean_title(cleaned_text)
                 
-                # تحديد النوع
-                job_type = "حكومي" if any(word in text for word in gov_keywords) else "خاص"
+                job_type = "حكومي" if any(word in cleaned_text for word in gov_keywords) else "خاص"
                 
                 job = {
                     "title": title,
@@ -62,7 +66,7 @@ def fetch_telegram_jobs():
                     "field": "عام",
                     "type": job_type,
                     "deadline": (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d'),
-                    "description": text,
+                    "description": cleaned_text, # حفظ النص النظيف
                     "source": f"https://t.me/{channel}",
                     "status": "pending"
                 }
@@ -75,14 +79,11 @@ def save_to_supabase(jobs):
     added = 0
     for job in jobs:
         try:
-            # منع التكرار بناءً على أول 30 حرف من العنوان
             check = supabase.table("job_submissions").select("id").ilike("title", f"%{job['title'][:30]}%").execute()
             if not check.data:
                 supabase.table("job_submissions").insert(job, returning="minimal").execute()
                 print(f"✅ تمت إضافة: {job['title']}")
                 added += 1
-            else:
-                print(f"⏩ موجود: {job['title']}")
         except Exception as e:
             print(f"❌ خطأ: {e}")
     print(f"انتهت العملية. تمت إضافة {added} إعلان.")
