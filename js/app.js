@@ -39,20 +39,29 @@ function render() {
   const query = norm($('searchInput').value);
   const location = $('locationFilter').value;
   const field = $('categoryFilter').value;
-  const filtered = getSectionAds().filter((ad) => {
+  const sectionAds = getSectionAds();
+  const filtered = sectionAds.filter((ad) => {
     const text = norm([ad.title,ad.company,ad.description,ad.experience,ad.work_arrangement,ad.field].join(' '));
     return (!query || text.includes(query)) && (!location || ad.governorate === location) && (!field || ad.field === field);
   });
   $('cardsContainer').innerHTML = filtered.map(renderCard).join('');
-  $('resultCount').textContent = `${filtered.length} إعلان`;
+  $('resultCount').textContent = filtered.length + ' إعلان';
   $('emptyState').hidden = filtered.length > 0;
+  $('retryLoad').hidden = true;
+  if (!filtered.length) {
+    const hasFilters = Boolean(query || location || field);
+    $('emptyState').querySelector('h3').textContent = hasFilters ? 'لا توجد نتائج مطابقة' : 'لا توجد إعلانات في هذا القسم الآن';
+    $('emptyState').querySelector('p').textContent = hasFilters
+      ? 'جرّب تغيير كلمات البحث أو المحافظة أو المجال.'
+      : 'يمكنك العودة لاحقًا للإعلانات الجديدة أو إضافة إعلان للمراجعة.';
+  }
   $('sectionTitle').textContent = SECTION[activeSection].title;
   $('sectionEyebrow').textContent = SECTION[activeSection].eyebrow;
 }
 function renderCard(ad) {
   const seeker = ad.listing_type === 'seeker';
   const source = ad.source && /^https?:\/\//i.test(ad.source) ? `<a href="${escapeHtml(ad.source)}" target="_blank" rel="noopener noreferrer">${seeker ? 'المصدر' : 'عرض الإعلان الأصلي'} ↗</a>` : '';
-  const contact = ad.contact ? `<span>للتواصل: ${escapeHtml(ad.contact)}</span>` : '<span>التواصل عبر الجهة المعلنة</span>';
+  const contact = ad.contact ? `<span>للتواصل: ${escapeHtml(ad.contact)}</span>` : (seeker ? '<span>وسيلة التواصل غير منشورة</span>' : '<span>التواصل عبر الجهة المعلنة</span>');
   const badges = [ad.governorate,ad.field,seeker ? ad.experience : (ad.type === 'حكومي' ? 'القطاع الحكومي' : 'القطاع الخاص'),ad.work_arrangement].filter(Boolean);
   const expiredLabel = seeker ? `متاح حتى ${formatDate(ad.deadline)}` : `آخر موعد ${formatDate(ad.deadline)}`;
   const description = String(ad.description || '');
@@ -60,23 +69,37 @@ function renderCard(ad) {
   const preview = hasMore ? `${description.slice(0, 170).trimEnd()}…` : description;
   return `<article class="card ${seeker ? 'seeker' : ''}"><div class="card-top"><span class="listing-badge">${seeker ? 'مطلوب وظيفة' : escapeHtml(ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص')}</span><time class="date-label">${escapeHtml(expiredLabel)}</time></div><h3>${escapeHtml(ad.title)}</h3><p class="card-org">${escapeHtml(seeker ? 'باحث عن عمل' : (ad.company || 'جهة معلنة'))}</p><div class="badges">${badges.map((badge) => `<span class="badge ${badge === 'القطاع الحكومي' ? 'gold' : ''}">${escapeHtml(badge)}</span>`).join('')}</div><p class="card-description">${escapeHtml(preview)}</p><button class="card-more" type="button" data-action="details" data-id="${escapeHtml(ad.id)}" aria-haspopup="dialog">${hasMore ? 'اقرأ المزيد' : 'تفاصيل الإعلان'}</button><div class="card-meta">${contact}<span class="card-views" data-view-id="${escapeHtml(ad.id)}">المشاهدات: ${formatCount(ad.view_count)}</span>${source}</div></article>`;
 }
+function showListingLoadError(error) {
+  console.error('تعذر تحميل الإعلانات:', error && (error.code || error.name || 'خطأ اتصال'));
+  $('resultCount').textContent = 'تعذر التحميل';
+  $('emptyState').hidden = false;
+  $('emptyState').querySelector('h3').textContent = 'لم نتمكن من تحميل الإعلانات';
+  $('emptyState').querySelector('p').textContent = 'تحقق من اتصالك وحاول مرة أخرى.';
+  $('retryLoad').hidden = false;
+}
 async function loadAds() {
-  const today = localISODate();
-  const {data,error} = await db.from(TABLE).select('*').eq('status','approved').gte('deadline',today).order('created_at',{ascending:false});
-  if (error) {
-    console.error('تعذر تحميل الإعلانات:', error);
-    $('resultCount').textContent = 'تعذّر تحميل الإعلانات';
-    $('emptyState').hidden = false;
-    $('emptyState').querySelector('h3').textContent = 'يتطلب تحديث قاعدة البيانات';
-    $('emptyState').querySelector('p').textContent = 'يحتاج الموقع إلى تطبيق ملف supabase/migration-listing-types.sql لتمكين الأقسام الجديدة.';
-    return;
+  $('resultCount').textContent = 'جارٍ تحميل الإعلانات…';
+  $('emptyState').hidden = true;
+  $('retryLoad').hidden = true;
+  try {
+    let result = await db.rpc('list_public_jobs');
+    if (result.error && ['PGRST202','42883'].includes(result.error.code)) {
+      result = await db.from(TABLE)
+        .select('id,listing_type,title,company,governorate,field,type,deadline,source,description,experience,work_arrangement,view_count,created_at')
+        .eq('status','approved')
+        .gte('deadline',localISODate())
+        .order('created_at',{ascending:false});
+    }
+    if (result.error) throw result.error;
+    ads = result.data || [];
+    const locations = [...new Set([...GOVERNORATES,...ads.map((a)=>a.governorate).filter(Boolean)])];
+    const fields = [...new Set([...FIELDS,...ads.map((a)=>a.field).filter(Boolean)])];
+    fillSelect($('locationFilter'),locations,'كل المحافظات');
+    fillSelect($('categoryFilter'),fields,'كل المجالات');
+    render();
+  } catch (error) {
+    showListingLoadError(error);
   }
-  ads = data || [];
-  const locations = [...new Set([...GOVERNORATES,...ads.map((a)=>a.governorate).filter(Boolean)])];
-  const fields = [...new Set([...FIELDS,...ads.map((a)=>a.field).filter(Boolean)])];
-  fillSelect($('locationFilter'),locations,'كل المحافظات');
-  fillSelect($('categoryFilter'),fields,'كل المجالات');
-  render();
 }
 function setSection(name) {
   activeSection = name;
@@ -103,7 +126,7 @@ function setFormType() {
   $('jobDeadline').min = localISODate();
   $('jobDeadline').value = $('jobDeadline').value || addDays(30);
   $('formTitle').textContent = seeker ? 'أعلن أنك تبحث عن عمل' : 'أضف وظيفة شاغرة';
-  $('contactConsent').textContent = seeker ? 'إذا أضفت وسيلة تواصل فستظهر للعامة بعد اعتماد طلبك. اتركه فارغًا إن لم ترغب بمشاركة وسيلة مباشرة.' : 'إذا أضفت وسيلة تواصل فستظهر للزوار بعد اعتماد الإعلان.';
+  $('contactConsent').textContent = 'لن تظهر وسيلة التواصل للزوار إلا إذا وافقت هنا واعتمد الإعلان.';
 }
 function openModal() {
   $('listingType').value = activeSection === 'seeker' ? 'seeker' : 'job';
@@ -115,10 +138,37 @@ function openModal() {
   setTimeout(() => $('listingType').focus(),50);
 }
 function closeModal() { $('modalBg').hidden = true; document.body.style.overflow = ''; }
+function isMissingContactPublicColumn(error) {
+  return ['PGRST204','42703'].includes(error && error.code) && /contact_public/i.test(String(error && error.message || ''));
+}
+async function insertPendingAd(payload) {
+  const result = await db.from(TABLE).insert(payload);
+  if (!result.error) return;
+  if (!isMissingContactPublicColumn(result.error)) throw result.error;
+  if (payload.contact) {
+    const error = new Error('CONTACT_CONSENT_MIGRATION_REQUIRED');
+    error.code = 'CONTACT_CONSENT_MIGRATION_REQUIRED';
+    throw error;
+  }
+  const {contact_public, ...legacyPayload} = payload;
+  const fallback = await db.from(TABLE).insert(legacyPayload);
+  if (fallback.error) throw fallback.error;
+}
 async function submitAd(event) {
   event.preventDefault();
   const form = event.currentTarget;
+  const message = $('formMessage');
+  message.className = 'form-message';
+  message.textContent = '';
   if (!form.reportValidity()) return;
+  const contactValue = $('contact').value.trim();
+  const contactPublic = $('contactPublic').checked;
+  if (contactValue && !contactPublic) {
+    message.className = 'form-message error';
+    message.textContent = 'فعّل الموافقة إذا أردت إظهار وسيلة التواصل، أو اترك الحقل فارغًا.';
+    $('contactPublic').focus();
+    return;
+  }
   const seeker = $('listingType').value === 'seeker';
   const payload = {
     listing_type: seeker ? 'seeker' : 'job',
@@ -130,30 +180,27 @@ async function submitAd(event) {
     deadline: seeker ? addDays(60) : $('jobDeadline').value,
     source: seeker ? null : $('source').value.trim(),
     description: $('description').value.trim(),
-    contact: $('contact').value.trim() || null,
+    contact: contactPublic ? (contactValue || null) : null,
+    contact_public: Boolean(contactValue && contactPublic),
     experience: seeker ? ($('experience').value.trim() || null) : null,
     work_arrangement: seeker ? ($('workArrangement').value || null) : null,
     status: 'pending'
   };
   const button = $('submitButton');
-  const message = $('formMessage');
   button.disabled = true;
   button.textContent = 'جارٍ الإرسال…';
-  message.className = 'form-message';
-  message.textContent = '';
   try {
-    const {error} = await db.from(TABLE).insert(payload);
-    if (error) throw error;
+    await insertPendingAd(payload);
     message.textContent = 'وصل إعلانك للمراجعة. لن يظهر للزوار حتى تتم الموافقة عليه.';
     $('adForm').reset();
     fillSelect($('governorate'),GOVERNORATES,'اختر المحافظة');
     fillSelect($('field'),FIELDS,'اختر المجال');
     setTimeout(closeModal,1800);
   } catch (error) {
-    console.error('فشل إرسال الإعلان:',error);
+    console.error('فشل إرسال الإعلان:', error && (error.code || error.name || 'خطأ اتصال'));
     message.className = 'form-message error';
-    message.textContent = error.code === '42703' || /column .* does not exist/i.test(error.message || '')
-      ? 'قاعدة البيانات لم تُحدّث بعد. طبّق ملف migration-listing-types.sql ثم أعد الإرسال.'
+    message.textContent = error && error.code === 'CONTACT_CONSENT_MIGRATION_REQUIRED'
+      ? 'إعداد إظهار وسيلة التواصل لم يكتمل بعد. أرسل الإعلان دون وسيلة تواصل أو حاول لاحقًا.'
       : 'لم نتمكن من إرسال الإعلان الآن. تحقق من الاتصال وحاول مجددًا.';
   } finally {
     button.disabled = false;
@@ -176,6 +223,7 @@ $('resetFilters').addEventListener('click',()=>{$('searchInput').value='';$('loc
 fillSelect($('governorate'),GOVERNORATES,'اختر المحافظة');
 fillSelect($('field'),FIELDS,'اختر المجال');
 setFormType();
+$('retryLoad').addEventListener('click',loadAds);
 loadAds();
 
 function openDetails(id) {
