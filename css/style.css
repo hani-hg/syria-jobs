@@ -63,3 +63,23 @@
 @media(max-width:760px){.site-logo{width:38px;height:38px}.footer-site-logo{width:28px;height:28px}}
 
 .contact-public-consent{display:flex;align-items:flex-start;gap:9px;margin:0 0 12px;color:var(--ink);font-size:11px;line-height:1.5}.contact-public-consent input{width:16px;height:16px;flex:0 0 auto;margin:2px 0 0;accent-color:var(--forest)}
+
+
+/* Smart Apply actions */
+.card-actions{margin:3px 0 12px}
+.btn-smart-apply{display:block;width:100%;background:var(--forest);color:#fff;border:1px solid var(--forest);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:900;text-align:center}
+.btn-smart-apply:hover{background:var(--forest-2);border-color:var(--forest-2)}
+.smart-apply-modal{max-width:460px}
+.smart-apply-options{display:grid;gap:10px;margin-top:15px}
+.smart-action{display:block;width:100%;padding:12px 14px;text-align:center;text-decoration:none;font-size:13px}
+.smart-whatsapp{background:#16824a;color:#fff}
+.smart-whatsapp:hover{background:#106a3c}
+.smart-source{background:var(--forest);color:#fff}
+.smart-source:hover{background:var(--forest-2)}
+.smart-email{background:#f0f3ef;color:var(--forest);border:1px solid var(--line)}
+.smart-email:hover{background:#e5ece6}
+.smart-action[hidden]{display:none}
+.smart-apply-fallback{margin:0;padding:13px;border-radius:9px;background:#f6f1e3;color:#725d2d;font-size:12px;text-align:center}
+.contact-consent{line-height:1.7}
+
+#editorWhatsappField[hidden]{display:none}

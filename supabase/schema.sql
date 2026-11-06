@@ -11,6 +11,8 @@ create table if not exists public.job_submissions (
   source text,
   description text not null check (char_length(description) between 10 and 5000),
   contact text check (contact is null or char_length(contact) <= 160),
+  contact_whatsapp text check (contact_whatsapp is null or char_length(contact_whatsapp) between 5 and 40),
+  contact_email text check (contact_email is null or (char_length(contact_email) <= 254 and contact_email ~* '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$')),
   contact_public boolean not null default false,
   experience text check (experience is null or char_length(experience) <= 120),
   work_arrangement text check (work_arrangement is null or char_length(work_arrangement) <= 80),
@@ -18,13 +20,15 @@ create table if not exists public.job_submissions (
   view_count bigint not null default 0 constraint job_submissions_view_count_check check (view_count >= 0),
   created_at timestamptz not null default now(),
   constraint job_submissions_listing_type_check check (listing_type in ('job','seeker')),
-  constraint job_submissions_source_by_kind_check check (listing_type = 'seeker' or (source is not null and source ~* '^https?://'))
+  constraint job_submissions_source_by_kind_check check (listing_type = 'seeker' or source is null or source ~* '^https?://')
 );
 
 alter table public.job_submissions add column if not exists listing_type text not null default 'job';
 alter table public.job_submissions add column if not exists experience text;
 alter table public.job_submissions add column if not exists work_arrangement text;
 alter table public.job_submissions add column if not exists contact text;
+alter table public.job_submissions add column if not exists contact_whatsapp text;
+alter table public.job_submissions add column if not exists contact_email text;
 alter table public.job_submissions add column if not exists contact_public boolean not null default false;
 alter table public.job_submissions add column if not exists view_count bigint not null default 0;
 alter table public.job_submissions drop constraint if exists job_submissions_view_count_check;
@@ -34,7 +38,13 @@ alter table public.job_submissions drop constraint if exists job_submissions_sou
 alter table public.job_submissions drop constraint if exists job_submissions_listing_type_check;
 alter table public.job_submissions drop constraint if exists job_submissions_source_by_kind_check;
 alter table public.job_submissions add constraint job_submissions_listing_type_check check (listing_type in ('job','seeker'));
-alter table public.job_submissions add constraint job_submissions_source_by_kind_check check (listing_type = 'seeker' or (source is not null and source ~* '^https?://'));
+alter table public.job_submissions add constraint job_submissions_source_by_kind_check check (listing_type = 'seeker' or source is null or source ~* '^https?://');
+alter table public.job_submissions drop constraint if exists job_submissions_contact_whatsapp_check;
+alter table public.job_submissions add constraint job_submissions_contact_whatsapp_check check (contact_whatsapp is null or char_length(contact_whatsapp) between 5 and 40);
+alter table public.job_submissions drop constraint if exists job_submissions_contact_email_check;
+alter table public.job_submissions add constraint job_submissions_contact_email_check check (contact_email is null or (char_length(contact_email) <= 254 and contact_email ~* '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'));
+alter table public.job_submissions drop constraint if exists job_submissions_contact_whatsapp_kind_check;
+alter table public.job_submissions add constraint job_submissions_contact_whatsapp_kind_check check (contact_whatsapp is null or listing_type = 'job');
 create index if not exists job_submissions_status_deadline_idx on public.job_submissions (status, deadline);
 create index if not exists job_submissions_kind_sector_deadline_idx on public.job_submissions (listing_type, type, deadline);
 
@@ -85,7 +95,8 @@ $function$;
 revoke all on function public.increment_listing_view(uuid) from public, anon, authenticated;
 grant execute on function public.increment_listing_view(uuid) to anon, authenticated;
 
-create or replace function public.list_public_jobs()
+drop function if exists public.list_public_jobs();
+create function public.list_public_jobs()
 returns table (
   id uuid,
   listing_type text,
@@ -98,6 +109,8 @@ returns table (
   source text,
   description text,
   contact text,
+  contact_whatsapp text,
+  contact_email text,
   experience text,
   work_arrangement text,
   view_count bigint,
@@ -120,6 +133,8 @@ as $function$
     job.source,
     job.description,
     case when job.contact_public then job.contact else null::text end as contact,
+    case when job.contact_public then job.contact_whatsapp else null::text end as contact_whatsapp,
+    case when job.contact_public then job.contact_email else null::text end as contact_email,
     job.experience,
     job.work_arrangement,
     job.view_count,

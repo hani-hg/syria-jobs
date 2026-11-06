@@ -12,6 +12,22 @@ const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (c) => ({'&
 const localISODate = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 const addDays = (days) => { const date = new Date(); date.setDate(date.getDate() + days); return localISODate(date); };
 const norm = (text) => String(text || '').toLocaleLowerCase('ar').normalize('NFKC').replace(/[\u064B-\u065F\u0670]/g,'').trim();
+function safeHttpUrl(value) {
+  try { const url = new URL(String(value || '')); return ['http:','https:'].includes(url.protocol) ? url.href : ''; }
+  catch (_) { return ''; }
+}
+function safeMailto(value) {
+  const match = /^([^\s@]+)@([^\s@]+\.[^\s@]+)$/.exec(String(value || '').trim());
+  return match ? `mailto:${encodeURIComponent(match[1])}@${encodeURIComponent(match[2])}` : '';
+}
+function normalizeWhatsapp(value) {
+  const digitMap = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+  let number = String(value || '').replace(/[٠-٩۰-۹]/g, (digit) => digitMap[digit]).replace(/\D/g, '');
+  if (number.startsWith('00')) number = number.slice(2);
+  if (number.startsWith('0')) number = `963${number.slice(1)}`;
+  else if (number.length === 9 && number.startsWith('9')) number = `963${number}`;
+  return number.length >= 8 && number.length <= 15 ? number : '';
+}
 function fillSelect(el, items, placeholder) {
   const selected = el.value;
   el.innerHTML = `<option value="">${escapeHtml(placeholder)}</option>` + items.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
@@ -60,14 +76,15 @@ function render() {
 }
 function renderCard(ad) {
   const seeker = ad.listing_type === 'seeker';
-  const source = ad.source && /^https?:\/\//i.test(ad.source) ? `<a href="${escapeHtml(ad.source)}" target="_blank" rel="noopener noreferrer">${seeker ? 'المصدر' : 'عرض الإعلان الأصلي'} ↗</a>` : '';
+  const sourceUrl = safeHttpUrl(ad.source);
+  const source = sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${seeker ? 'المصدر' : 'عرض الإعلان الأصلي'} ↗</a>` : '';
   const contact = ad.contact ? `<span>للتواصل: ${escapeHtml(ad.contact)}</span>` : (seeker ? '<span>وسيلة التواصل غير منشورة</span>' : '<span>التواصل عبر الجهة المعلنة</span>');
   const badges = [ad.governorate,ad.field,seeker ? ad.experience : (ad.type === 'حكومي' ? 'القطاع الحكومي' : 'القطاع الخاص'),ad.work_arrangement].filter(Boolean);
   const expiredLabel = seeker ? `متاح حتى ${formatDate(ad.deadline)}` : `آخر موعد ${formatDate(ad.deadline)}`;
   const description = String(ad.description || '');
   const hasMore = description.length > 170;
   const preview = hasMore ? `${description.slice(0, 170).trimEnd()}…` : description;
-  return `<article class="card ${seeker ? 'seeker' : ''}"><div class="card-top"><span class="listing-badge">${seeker ? 'مطلوب وظيفة' : escapeHtml(ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص')}</span><time class="date-label">${escapeHtml(expiredLabel)}</time></div><h3>${escapeHtml(ad.title)}</h3><p class="card-org">${escapeHtml(seeker ? 'باحث عن عمل' : (ad.company || 'جهة معلنة'))}</p><div class="badges">${badges.map((badge) => `<span class="badge ${badge === 'القطاع الحكومي' ? 'gold' : ''}">${escapeHtml(badge)}</span>`).join('')}</div><p class="card-description">${escapeHtml(preview)}</p><button class="card-more" type="button" data-action="details" data-id="${escapeHtml(ad.id)}" aria-haspopup="dialog">${hasMore ? 'اقرأ المزيد' : 'تفاصيل الإعلان'}</button><div class="card-meta">${contact}<span class="card-views" data-view-id="${escapeHtml(ad.id)}">المشاهدات: ${formatCount(ad.view_count)}</span>${source}</div></article>`;
+  return `<article class="card ${seeker ? 'seeker' : ''}"><div class="card-top"><span class="listing-badge">${seeker ? 'مطلوب وظيفة' : escapeHtml(ad.type === 'حكومي' ? 'وظيفة حكومية' : 'وظيفة قطاع خاص')}</span><time class="date-label">${escapeHtml(expiredLabel)}</time></div><h3>${escapeHtml(ad.title)}</h3><p class="card-org">${escapeHtml(seeker ? 'باحث عن عمل' : (ad.company || 'جهة معلنة'))}</p><div class="badges">${badges.map((badge) => `<span class="badge ${badge === 'القطاع الحكومي' ? 'gold' : ''}">${escapeHtml(badge)}</span>`).join('')}</div><p class="card-description">${escapeHtml(preview)}</p><button class="card-more" type="button" data-action="details" data-id="${escapeHtml(ad.id)}" aria-haspopup="dialog">${hasMore ? 'اقرأ المزيد' : 'تفاصيل الإعلان'}</button><div class="card-actions"><button class="btn btn-smart-apply" type="button" data-action="smart-apply" data-id="${escapeHtml(ad.id)}" aria-haspopup="dialog">قدّم الآن</button></div><div class="card-meta">${contact}<span class="card-views" data-view-id="${escapeHtml(ad.id)}">المشاهدات: ${formatCount(ad.view_count)}</span>${source}</div></article>`;
 }
 function showListingLoadError(error) {
   console.error('تعذر تحميل الإعلانات:', error && (error.code || error.name || 'خطأ اتصال'));
@@ -115,18 +132,21 @@ function setFormType() {
   $('jobFields').hidden = seeker;
   $('seekerFields').hidden = !seeker;
   $('company').required = !seeker;
-  $('source').required = !seeker;
+  $('source').required = false;
   $('jobDeadline').required = !seeker;
   $('jobSector').disabled = seeker;
   $('company').disabled = seeker;
   $('source').disabled = seeker;
   $('jobDeadline').disabled = seeker;
+  $('contactWhatsapp').disabled = seeker;
+  $('contactWhatsapp').required = false;
+  if (seeker) $('contactWhatsapp').value = '';
   $('experience').disabled = !seeker;
   $('workArrangement').disabled = !seeker;
   $('jobDeadline').min = localISODate();
   $('jobDeadline').value = $('jobDeadline').value || addDays(30);
   $('formTitle').textContent = seeker ? 'أعلن أنك تبحث عن عمل' : 'أضف وظيفة شاغرة';
-  $('contactConsent').textContent = 'لن تظهر وسيلة التواصل للزوار إلا إذا وافقت هنا واعتمد الإعلان.';
+  $('contactConsent').textContent = 'لن يظهر الهاتف أو واتساب أو البريد للزوار إلا إذا وافقت هنا واعتمد الإعلان.';
 }
 function openModal() {
   $('listingType').value = activeSection === 'seeker' ? 'seeker' : 'job';
@@ -138,19 +158,19 @@ function openModal() {
   setTimeout(() => $('listingType').focus(),50);
 }
 function closeModal() { $('modalBg').hidden = true; document.body.style.overflow = ''; }
-function isMissingContactPublicColumn(error) {
-  return ['PGRST204','42703'].includes(error && error.code) && /contact_public/i.test(String(error && error.message || ''));
+function isMissingSmartApplyColumn(error) {
+  return ['PGRST204','42703'].includes(error && error.code) && /contact_(public|whatsapp|email)/i.test(String(error && error.message || ''));
 }
 async function insertPendingAd(payload) {
   const result = await db.from(TABLE).insert(payload);
   if (!result.error) return;
-  if (!isMissingContactPublicColumn(result.error)) throw result.error;
-  if (payload.contact) {
-    const error = new Error('CONTACT_CONSENT_MIGRATION_REQUIRED');
-    error.code = 'CONTACT_CONSENT_MIGRATION_REQUIRED';
+  if (!isMissingSmartApplyColumn(result.error)) throw result.error;
+  if (payload.contact || payload.contact_whatsapp || payload.contact_email) {
+    const error = new Error('SMART_APPLY_MIGRATION_REQUIRED');
+    error.code = 'SMART_APPLY_MIGRATION_REQUIRED';
     throw error;
   }
-  const {contact_public, ...legacyPayload} = payload;
+  const {contact_public,contact_whatsapp,contact_email,...legacyPayload} = payload;
   const fallback = await db.from(TABLE).insert(legacyPayload);
   if (fallback.error) throw fallback.error;
 }
@@ -161,15 +181,18 @@ async function submitAd(event) {
   message.className = 'form-message';
   message.textContent = '';
   if (!form.reportValidity()) return;
+  const seeker = $('listingType').value === 'seeker';
   const contactValue = $('contact').value.trim();
+  const whatsappValue = $('contactWhatsapp').value.trim();
+  const emailValue = $('contactEmail').value.trim();
   const contactPublic = $('contactPublic').checked;
-  if (contactValue && !contactPublic) {
+  const hasAnyContact = Boolean(contactValue || (!seeker && whatsappValue) || emailValue);
+  if (hasAnyContact && !contactPublic) {
     message.className = 'form-message error';
-    message.textContent = 'فعّل الموافقة إذا أردت إظهار وسيلة التواصل، أو اترك الحقل فارغًا.';
+    message.textContent = 'فعّل الموافقة إذا أردت إظهار الهاتف أو واتساب أو البريد، أو اترك حقول التواصل فارغة.';
     $('contactPublic').focus();
     return;
   }
-  const seeker = $('listingType').value === 'seeker';
   const payload = {
     listing_type: seeker ? 'seeker' : 'job',
     title: $('title').value.trim(),
@@ -181,7 +204,9 @@ async function submitAd(event) {
     source: seeker ? null : $('source').value.trim(),
     description: $('description').value.trim(),
     contact: contactPublic ? (contactValue || null) : null,
-    contact_public: Boolean(contactValue && contactPublic),
+    contact_whatsapp: !seeker && contactPublic ? (whatsappValue || null) : null,
+    contact_email: contactPublic ? (emailValue || null) : null,
+    contact_public: Boolean(hasAnyContact && contactPublic),
     experience: seeker ? ($('experience').value.trim() || null) : null,
     work_arrangement: seeker ? ($('workArrangement').value || null) : null,
     status: 'pending'
@@ -199,8 +224,8 @@ async function submitAd(event) {
   } catch (error) {
     console.error('فشل إرسال الإعلان:', error && (error.code || error.name || 'خطأ اتصال'));
     message.className = 'form-message error';
-    message.textContent = error && error.code === 'CONTACT_CONSENT_MIGRATION_REQUIRED'
-      ? 'إعداد إظهار وسيلة التواصل لم يكتمل بعد. أرسل الإعلان دون وسيلة تواصل أو حاول لاحقًا.'
+    message.textContent = error && error.code === 'SMART_APPLY_MIGRATION_REQUIRED'
+      ? 'قاعدة البيانات تحتاج إلى تحديث ميزة التقديم الذكي؛ أرسل الإعلان دون وسائل تواصل أو حاول لاحقًا.'
       : 'لم نتمكن من إرسال الإعلان الآن. تحقق من الاتصال وحاول مجددًا.';
   } finally {
     button.disabled = false;
@@ -272,13 +297,50 @@ function closeDetails() {
   $('detailsModalBg').hidden = true;
   document.body.style.overflow = '';
 }
+function setSmartAction(id, href) {
+  const link = $(id);
+  link.hidden = !href;
+  if (href) link.href = href;
+  else link.removeAttribute('href');
+}
+function openSmartApply(id) {
+  const ad = ads.find((item) => String(item.id) === String(id));
+  if (!ad) return;
+  const title = String(ad.title || 'الوظيفة');
+  const whatsapp = normalizeWhatsapp(ad.contact_whatsapp);
+  const whatsappMessage = `مرحباً، أتيت من منصة وظائف سوريا، أرغب بالتقديم على وظيفة ${title}`;
+  const source = safeHttpUrl(ad.source);
+  const email = String(ad.contact_email || '').trim();
+  const emailAddress = safeMailto(email);
+  const emailBody = `مرحباً، أتيت من منصة وظائف سوريا، أرغب بالتقديم على وظيفة ${title}`;
+  setSmartAction('smartWhatsApp', whatsapp ? `https://wa.me/${whatsapp}?text=${encodeURIComponent(whatsappMessage)}` : '');
+  setSmartAction('smartSource', source);
+  setSmartAction('smartEmail', emailAddress ? `${emailAddress}?subject=${encodeURIComponent(`التقديم على وظيفة: ${title}`)}&body=${encodeURIComponent(emailBody)}` : '');
+  const hasRoute = Boolean(whatsapp || source || emailAddress);
+  $('smartApplyTitle').textContent = title;
+  $('smartApplyIntro').textContent = hasRoute ? 'اختر وسيلة التقديم المتاحة في الإعلان.' : 'لم يضف صاحب الإعلان وسيلة تقديم مباشرة.';
+  $('smartApplyFallback').hidden = hasRoute;
+  $('smartApplyFallback').textContent = source ? 'راجع تفاصيل الإعلان في المصدر.' : 'لا توجد وسيلة تقديم مباشرة. راجع تفاصيل الإعلان أو الموقع الرسمي للجهة المعلنة.';
+  $('smartApplyModalBg').hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('closeSmartApply').focus();
+}
+function closeSmartApply() {
+  $('smartApplyModalBg').hidden = true;
+  document.body.style.overflow = '';
+}
 $('cardsContainer').addEventListener('click', (event) => {
-  const button = event.target.closest('button[data-action="details"]');
-  if (button) openDetails(button.dataset.id);
+  const applyButton = event.target.closest('button[data-action="smart-apply"]');
+  if (applyButton) { openSmartApply(applyButton.dataset.id); return; }
+  const detailsButton = event.target.closest('button[data-action="details"]');
+  if (detailsButton) openDetails(detailsButton.dataset.id);
 });
 $('closeDetails').addEventListener('click', closeDetails);
 $('detailsModalBg').addEventListener('click', (event) => { if (event.target === $('detailsModalBg')) closeDetails(); });
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('detailsModalBg').hidden) closeDetails(); });
+$('closeSmartApply').addEventListener('click', closeSmartApply);
+$('smartApplyModalBg').addEventListener('click', (event) => { if (event.target === $('smartApplyModalBg')) closeSmartApply(); });
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('smartApplyModalBg').hidden) closeSmartApply(); });
 
 function openContactModal() {
   $('contactForm').reset();
