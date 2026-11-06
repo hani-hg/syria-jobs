@@ -1,5 +1,5 @@
-const CACHE = 'syria-jobs-v8';
-const ASSETS = ['/', '/index.html', '/css/style.css', '/js/app.js', '/favicon.svg', '/favicon.png', '/assets/brand-mark.png', '/manifest.json'];
+const CACHE = 'syria-jobs-v9';
+const ASSETS = ['/', '/index.html', '/about.html', '/css/style.css', '/js/app.js', '/favicon.svg', '/favicon.png', '/assets/brand-mark.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
