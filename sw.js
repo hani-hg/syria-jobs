@@ -1,4 +1,4 @@
-const CACHE = 'syria-jobs-v7';
+const CACHE = 'syria-jobs-v8';
 const ASSETS = ['/', '/index.html', '/css/style.css', '/js/app.js', '/favicon.svg', '/favicon.png', '/assets/brand-mark.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
