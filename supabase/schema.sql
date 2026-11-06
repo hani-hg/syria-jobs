@@ -11,6 +11,7 @@ create table if not exists public.job_submissions (
   source text,
   description text not null check (char_length(description) between 10 and 5000),
   contact text check (contact is null or char_length(contact) <= 160),
+  contact_public boolean not null default false,
   experience text check (experience is null or char_length(experience) <= 120),
   work_arrangement text check (work_arrangement is null or char_length(work_arrangement) <= 80),
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
@@ -24,6 +25,7 @@ alter table public.job_submissions add column if not exists listing_type text no
 alter table public.job_submissions add column if not exists experience text;
 alter table public.job_submissions add column if not exists work_arrangement text;
 alter table public.job_submissions add column if not exists contact text;
+alter table public.job_submissions add column if not exists contact_public boolean not null default false;
 alter table public.job_submissions add column if not exists view_count bigint not null default 0;
 alter table public.job_submissions drop constraint if exists job_submissions_view_count_check;
 alter table public.job_submissions add constraint job_submissions_view_count_check check (view_count >= 0);
@@ -44,7 +46,9 @@ create table if not exists public.admin_users (
 alter table public.job_submissions enable row level security;
 alter table public.admin_users enable row level security;
 grant usage on schema public to anon, authenticated;
-grant select, insert, update, delete on table public.job_submissions to anon, authenticated;
+revoke all on table public.job_submissions from public, anon;
+grant insert on table public.job_submissions to anon;
+grant select, insert, update, delete on table public.job_submissions to authenticated;
 grant select on table public.admin_users to authenticated;
 
 create or replace function public.is_admin()
@@ -81,6 +85,53 @@ $function$;
 revoke all on function public.increment_listing_view(uuid) from public, anon, authenticated;
 grant execute on function public.increment_listing_view(uuid) to anon, authenticated;
 
+create or replace function public.list_public_jobs()
+returns table (
+  id uuid,
+  listing_type text,
+  title text,
+  company text,
+  governorate text,
+  field text,
+  "type" text,
+  deadline date,
+  source text,
+  description text,
+  contact text,
+  experience text,
+  work_arrangement text,
+  view_count bigint,
+  created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = pg_catalog, public, pg_temp
+as $function$
+  select
+    job.id,
+    job.listing_type,
+    job.title,
+    job.company,
+    job.governorate,
+    job.field,
+    job.type,
+    job.deadline,
+    job.source,
+    job.description,
+    case when job.contact_public then job.contact else null::text end as contact,
+    job.experience,
+    job.work_arrangement,
+    job.view_count,
+    job.created_at
+  from public.job_submissions as job
+  where job.status = 'approved'
+    and job.deadline >= current_date
+  order by job.created_at desc;
+$function$;
+revoke all on function public.list_public_jobs() from public, anon, authenticated;
+grant execute on function public.list_public_jobs() to anon, authenticated;
+
 drop policy if exists "public can submit pending jobs" on public.job_submissions;
 create policy "public can submit pending jobs" on public.job_submissions for insert to anon, authenticated with check (status = 'pending');
 drop policy if exists "admins can insert jobs" on public.job_submissions;
@@ -90,7 +141,7 @@ create policy "admins can update jobs" on public.job_submissions for update to a
 drop policy if exists "admins can delete jobs" on public.job_submissions;
 create policy "admins can delete jobs" on public.job_submissions for delete to authenticated using (public.is_admin());
 drop policy if exists "public can read approved jobs" on public.job_submissions;
-create policy "public can read approved jobs" on public.job_submissions for select to anon, authenticated using (status = 'approved' and deadline >= current_date);
+drop policy if exists "public can read approved jobs" on public.job_submissions;
 drop policy if exists "admins can read all jobs" on public.job_submissions;
 create policy "admins can read all jobs" on public.job_submissions for select to authenticated using (public.is_admin());
 drop policy if exists "admins can read own admin row" on public.admin_users;
