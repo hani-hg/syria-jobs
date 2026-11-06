@@ -390,6 +390,7 @@ $('cancelContact').addEventListener('click', closeContactModal);
 $('contactModalBg').addEventListener('click', (event) => { if (event.target === $('contactModalBg')) closeContactModal(); });
 $('contactForm').addEventListener('submit', submitContactMessage);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('contactModalBg').hidden) closeContactModal(); });
+if (new URLSearchParams(window.location.search).get('contact') === '1') openContactModal();
 
 
 // Homepage banner slider: reads up to three public images from Supabase.
