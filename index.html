@@ -67,7 +67,7 @@
       </div>
       <div class="results-heading"><div><span class="eyebrow" id="sectionEyebrow">الفرص المتاحة</span><h2 id="sectionTitle">وظائف حكومية</h2></div><span class="result-count" id="resultCount" aria-live="polite">—</span></div>
       <div class="cards" id="cardsContainer" aria-live="polite"></div>
-      <div class="empty" id="emptyState" hidden><span class="empty-mark">؟</span><h3>لا توجد إعلانات مطابقة الآن</h3><p>جرّب تغيير كلمات البحث أو المحافظة، أو عُد لاحقًا للإعلانات الجديدة.</p></div>
+      <div class="empty" id="emptyState" hidden><span class="empty-mark">؟</span><h3>لا توجد إعلانات مطابقة الآن</h3><p>جرّب تغيير كلمات البحث أو المحافظة، أو عُد لاحقًا للإعلانات الجديدة.</p><button class="btn btn-primary" id="retryLoad" type="button" hidden>إعادة المحاولة</button></div>
       <aside class="safety-note"><span class="safety-icon" aria-hidden="true">!</span><div><strong>انتبه قبل التقديم</strong><p>تحقق من الجهة ومصدر الإعلان، ولا تدفع رسومًا مقابل الحصول على وظيفة أو ترسل وثائق حساسة لجهة غير موثوقة.</p></div></aside>
     </section>
   </main>
@@ -83,7 +83,8 @@
       <div class="field-row"><label class="field-label">المحافظة<select id="governorate" name="governorate" required></select></label><label class="field-label">المجال<select id="field" name="field" required></select></label></div>
       <label class="field-label">التفاصيل والمهارات<textarea id="description" name="description" rows="4" required minlength="10" maxlength="5000" placeholder="اكتب وصفًا واضحًا ومختصرًا..."></textarea></label>
       <label class="field-label">وسيلة تواصل (اختيارية)<input id="contact" name="contact" maxlength="160" placeholder="رقم هاتف، واتساب، أو بريد إلكتروني"></label>
-      <p class="contact-consent" id="contactConsent">إذا أضفت وسيلة تواصل فستظهر للزوار بعد اعتماد الإعلان.</p><p class="review-note">كل الإعلانات تُراجع قبل النشر. إعلانات «مطلوب وظيفة» تنتهي بعد 60 يومًا.</p>
+      <label class="contact-public-consent"><input id="contactPublic" name="contact_public" type="checkbox" aria-describedby="contactConsent"><span>أوافق على إظهار وسيلة التواصل للزوار بعد اعتماد الإعلان.</span></label>
+      <p class="contact-consent" id="contactConsent">اترك الخيار غير محدد لإبقاء وسيلة التواصل مخفية.</p><p class="review-note">كل الإعلانات تُراجع قبل النشر. إعلانات «مطلوب وظيفة» تنتهي بعد 60 يومًا.</p>
       <div class="modal-actions"><button class="btn btn-quiet" id="cancelModal" type="button">إلغاء</button><button class="btn btn-primary" id="submitButton" type="submit">إرسال للمراجعة</button></div><p class="form-message" id="formMessage" role="status"></p>
     </form>
   </section></div>

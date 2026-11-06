@@ -11,6 +11,7 @@ create table if not exists public.job_submissions (
   source text,
   description text not null check (char_length(description) between 10 and 5000),
   contact text check (contact is null or char_length(contact) <= 160),
+  contact_public boolean not null default false,
   experience text check (experience is null or char_length(experience) <= 120),
   work_arrangement text check (work_arrangement is null or char_length(work_arrangement) <= 80),
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
@@ -23,6 +24,7 @@ alter table public.job_submissions add column if not exists listing_type text no
 alter table public.job_submissions add column if not exists experience text;
 alter table public.job_submissions add column if not exists work_arrangement text;
 alter table public.job_submissions add column if not exists contact text;
+alter table public.job_submissions add column if not exists contact_public boolean not null default false;
 alter table public.job_submissions alter column source drop not null;
 alter table public.job_submissions drop constraint if exists job_submissions_source_check;
 alter table public.job_submissions drop constraint if exists job_submissions_listing_type_check;
@@ -40,7 +42,9 @@ create table if not exists public.admin_users (
 alter table public.job_submissions enable row level security;
 alter table public.admin_users enable row level security;
 grant usage on schema public to anon, authenticated;
-grant select, insert, update, delete on table public.job_submissions to anon, authenticated;
+revoke all on table public.job_submissions from public, anon;
+grant insert on table public.job_submissions to anon;
+grant select, insert, update, delete on table public.job_submissions to authenticated;
 grant select on table public.admin_users to authenticated;
 
 create or replace function public.is_admin()
@@ -64,7 +68,7 @@ create policy "admins can update jobs" on public.job_submissions for update to a
 drop policy if exists "admins can delete jobs" on public.job_submissions;
 create policy "admins can delete jobs" on public.job_submissions for delete to authenticated using (public.is_admin());
 drop policy if exists "public can read approved jobs" on public.job_submissions;
-create policy "public can read approved jobs" on public.job_submissions for select to anon, authenticated using (status = 'approved' and deadline >= current_date);
+drop policy if exists "public can read approved jobs" on public.job_submissions;
 drop policy if exists "admins can read all jobs" on public.job_submissions;
 create policy "admins can read all jobs" on public.job_submissions for select to authenticated using (public.is_admin());
 drop policy if exists "admins can read own admin row" on public.admin_users;

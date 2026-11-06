@@ -36,9 +36,8 @@ create policy "admins can update jobs"
 create policy "admins can delete jobs"
   on public.job_submissions for delete to authenticated
   using (public.is_admin());
-create policy "public can read approved jobs"
-  on public.job_submissions for select to anon, authenticated
-  using (status = 'approved' and deadline >= current_date);
+-- Public reads are handled by list_public_jobs(), which masks contact unless consent is recorded.
+drop policy if exists "public can read approved jobs" on public.job_submissions;
 create policy "admins can read all jobs"
   on public.job_submissions for select to authenticated
   using (public.is_admin());
@@ -61,7 +60,7 @@ create policy "admins can read own admin row"
 
 -- أقل صلاحيات لازمة: إزالة منح CRUD العامة القديمة ثم منح ما تحتاجه الواجهات فقط.
 revoke all on table public.job_submissions from public, anon, authenticated;
-grant select, insert on table public.job_submissions to anon;
+grant insert on table public.job_submissions to anon;
 grant select, insert, update, delete on table public.job_submissions to authenticated;
 grant all on table public.job_submissions to service_role;
 
