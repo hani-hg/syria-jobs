@@ -43,6 +43,7 @@
       try {
         await OneSignal.init({
           appId: "3029809e-5107-41df-9a9e-3f52a4fb028f",
+          serviceWorkerPath: "OneSignalSDKWorker.js",
           serviceWorkerParam: { scope: "/push/onesignal/" }
         });
         window.OneSignalInitState = 'ready';
@@ -50,7 +51,8 @@
       } catch (error) {
         window.OneSignalInitState = 'error';
         console.error('OneSignal initialization failed.', error);
-        window.dispatchEvent(new Event('syria-onesignal-error'));
+        const message = error?.message || String(error || 'Unknown initialization error');
+        window.dispatchEvent(new CustomEvent('syria-onesignal-error', { detail: { message } }));
       }
     });
   </script>

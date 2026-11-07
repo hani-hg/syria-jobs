@@ -479,8 +479,20 @@ if (enableNotificationsButton && notificationStatus) {
     }
   }, { once: true });
 
-  window.addEventListener('syria-onesignal-error', () => {
-    setNotificationMessage('تعذرت تهيئة OneSignal. تحقّق من App ID ورابط الموقع في إعدادات OneSignal.', 'error');
+  window.addEventListener('syria-onesignal-error', (event) => {
+    const details = String(event.detail?.message || '').trim().slice(0, 180);
+    const normalized = details.toLowerCase();
+    if (/can only be used on|origin.*mismatch|site url/.test(normalized)) {
+      setNotificationMessage('نطاق الصفحة لا يطابق نطاق OneSignal. افتح الموقع مباشرةً على https://jobs-syria-2026.vercel.app.', 'error');
+    } else if (/service.?worker|registration/.test(normalized)) {
+      setNotificationMessage('تعذّر تسجيل ملف الإشعارات. حدّث الصفحة، وتأكد من فتحها عبر HTTPS في Safari أو Chrome.', 'error');
+    } else if (/not supported|unsupported/.test(normalized)) {
+      setNotificationMessage('هذا المتصفح لا يدعم إشعارات الويب. على iPhone يلزم iOS 16.4 أو أحدث وإضافة الموقع إلى الشاشة الرئيسية.', 'error');
+    } else if (details) {
+      setNotificationMessage(`تعذرت تهيئة OneSignal: ${details}`, 'error');
+    } else {
+      setNotificationMessage('تعذرت تهيئة OneSignal. افتح النطاق الإنتاجي مباشرةً ثم حدّث الصفحة.', 'error');
+    }
   }, { once: true });
 
   setTimeout(() => {
