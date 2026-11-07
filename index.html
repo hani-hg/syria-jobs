@@ -35,16 +35,26 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "3029809e-5107-41df-9a9e-3f52a4fb028f",
-      allowLocalhostAsSecureOrigin: true
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalInitState = 'loading';
+    OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        await OneSignal.init({
+          appId: "3029809e-5107-41df-9a9e-3f52a4fb028f",
+          serviceWorkerParam: { scope: "/push/onesignal/" }
+        });
+        window.OneSignalInitState = 'ready';
+        window.dispatchEvent(new CustomEvent('syria-onesignal-ready', { detail: OneSignal }));
+      } catch (error) {
+        window.OneSignalInitState = 'error';
+        console.error('OneSignal initialization failed.', error);
+        window.dispatchEvent(new Event('syria-onesignal-error'));
+      }
     });
-  });
-</script>
+  </script>
+</head>
 <body>
   <header class="site-header">
     <div class="header-brand-group">
@@ -81,7 +91,8 @@
       <aside class="safety-note"><span class="safety-icon" aria-hidden="true">!</span><div><strong>انتبه قبل التقديم</strong><p>تحقق من الجهة ومصدر الإعلان، ولا تدفع رسومًا مقابل الحصول على وظيفة أو ترسل وثائق حساسة لجهة غير موثوقة.</p></div></aside>
     </section>
   </main>
-  <footer class="site-footer" id="contactFooter"><a class="brand footer-brand" href="index.html" aria-label="وظائف سوريا"><img class="footer-site-logo" src="/assets/brand-mark.png" alt=""><strong>وظائف سوريا</strong></a><span>منصة مستقلة غير حكومية. راجع المصدر الرسمي دائمًا.</span><nav class="footer-links" aria-label="روابط الموقع"><a class="footer-about" href="about.html">من نحن</a><button class="footer-contact" id="openContact" type="button">تواصل معنا</button></nav></footer>
+  <footer class="site-footer" id="contactFooter"><a class="brand footer-brand" href="index.html" aria-label="وظائف سوريا"><img class="footer-site-logo" src="/assets/brand-mark.png" alt=""><strong>وظائف سوريا</strong></a><span>منصة مستقلة غير حكومية. راجع المصدر الرسمي دائمًا.</span><nav class="footer-links" aria-label="روابط الموقع"><a class="footer-about" href="about.html">من نحن</a><button class="footer-contact" id="openContact" type="button">تواصل معنا</button><button class="footer-notifications" id="enableNotifications" type="button" disabled>تفعيل الإشعارات</button></nav></footer>
+  <p class="notification-status" id="notificationStatus" role="status" aria-live="polite"></p>
   <div class="modal-bg" id="modalBg" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
     <div class="modal-head"><div><span class="eyebrow">إرسال للمراجعة</span><h2 id="formTitle">أضف إعلانك</h2></div><button class="modal-close" id="closeModal" type="button" aria-label="إغلاق">×</button></div>
     <p class="form-intro" id="formIntro">اختر القسم واملأ المعلومات المطلوبة. سيظهر الإعلان بعد المراجعة والموافقة.</p>
