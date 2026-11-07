@@ -392,6 +392,146 @@ $('contactForm').addEventListener('submit', submitContactMessage);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('contactModalBg').hidden) closeContactModal(); });
 if (new URLSearchParams(window.location.search).get('contact') === '1') openContactModal();
 
+// OneSignal Web Push: request permission only after an explicit user click.
+const enableNotificationsButton = $('enableNotifications');
+const notificationStatus = $('notificationStatus');
+let oneSignalClient = null;
+let oneSignalIsReady = false;
+
+function setNotificationMessage(message, state = '') {
+  if (!notificationStatus) return;
+  notificationStatus.textContent = message;
+  notificationStatus.className = `notification-status${state ? ` ${state}` : ''}`;
+}
+
+function markNotificationsEnabled() {
+  if (!enableNotificationsButton) return;
+  enableNotificationsButton.disabled = true;
+  enableNotificationsButton.textContent = 'الإشعارات مفعّلة';
+  setNotificationMessage('تم تفعيل الإشعارات بنجاح لهذا المتصفح.');
+}
+
+function isAppleMobileDevice() {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isInstalledPwa() {
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
+function waitForPushSubscription(OneSignal, timeoutMs = 10000) {
+  const subscription = OneSignal.User.PushSubscription;
+  if (subscription.optedIn) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    let timeoutId;
+    let finished = false;
+    const finish = (subscribed) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+      subscription.removeEventListener('change', onChange);
+      resolve(subscribed);
+    };
+    const onChange = (event) => {
+      if (event?.current?.optedIn) finish(true);
+    };
+
+    subscription.addEventListener('change', onChange);
+    timeoutId = setTimeout(() => finish(Boolean(subscription.optedIn)), timeoutMs);
+    if (subscription.optedIn) finish(true);
+  });
+}
+
+if (enableNotificationsButton && notificationStatus) {
+  enableNotificationsButton.disabled = true;
+  setNotificationMessage('جارٍ تهيئة خدمة الإشعارات…');
+
+  window.addEventListener('syria-onesignal-ready', (event) => {
+    oneSignalClient = event.detail;
+    oneSignalIsReady = Boolean(oneSignalClient);
+    if (!oneSignalIsReady) return;
+
+    if (isAppleMobileDevice() && !isInstalledPwa()) {
+      setNotificationMessage('على iPhone أو iPad، أضف الموقع إلى الشاشة الرئيسية وافتحه منها (iOS 16.4 أو أحدث).');
+      return;
+    }
+
+    if (!oneSignalClient.Notifications.isPushSupported()) {
+      setNotificationMessage('هذا المتصفح أو وضع التصفح الحالي لا يدعم إشعارات الويب.');
+      return;
+    }
+
+    const pushSubscription = oneSignalClient.User.PushSubscription;
+    pushSubscription.addEventListener('change', (change) => {
+      if (change?.current?.optedIn) markNotificationsEnabled();
+      else if (!pushSubscription.optedIn) {
+        enableNotificationsButton.disabled = false;
+        enableNotificationsButton.textContent = 'تفعيل الإشعارات';
+      }
+    });
+
+    if (pushSubscription.optedIn) markNotificationsEnabled();
+    else {
+      enableNotificationsButton.disabled = false;
+      setNotificationMessage('');
+    }
+  }, { once: true });
+
+  window.addEventListener('syria-onesignal-error', () => {
+    setNotificationMessage('تعذرت تهيئة OneSignal. تحقّق من App ID ورابط الموقع في إعدادات OneSignal.', 'error');
+  }, { once: true });
+
+  setTimeout(() => {
+    if (!oneSignalIsReady && window.OneSignalInitState !== 'error') {
+      setNotificationMessage('لم تكتمل تهيئة خدمة الإشعارات. تحقّق من الاتصال ثم حدّث الصفحة.', 'error');
+    }
+  }, 15000);
+
+  enableNotificationsButton.addEventListener('click', async () => {
+    if (!oneSignalIsReady || !oneSignalClient) {
+      setNotificationMessage('خدمة الإشعارات لم تجهز بعد. حدّث الصفحة وحاول مجددًا.', 'error');
+      return;
+    }
+
+    if (!oneSignalClient.Notifications.isPushSupported()) {
+      setNotificationMessage('هذا المتصفح أو وضع التصفح الحالي لا يدعم إشعارات الويب.', 'error');
+      return;
+    }
+
+    if ('Notification' in window && Notification.permission === 'denied') {
+      setNotificationMessage('إشعارات الموقع محظورة في المتصفح. اسمح بها من إعدادات الموقع ثم أعد المحاولة.', 'error');
+      return;
+    }
+
+    enableNotificationsButton.disabled = true;
+    enableNotificationsButton.textContent = 'جارٍ التفعيل…';
+    setNotificationMessage('سيطلب المتصفح إذن الإشعارات الآن.');
+    try {
+      await oneSignalClient.Notifications.requestPermission();
+      if (!oneSignalClient.Notifications.permission) {
+        setNotificationMessage('لم يتم منح الإذن. يمكنك السماح لاحقًا من إعدادات الموقع في المتصفح.', 'error');
+        return;
+      }
+
+      await oneSignalClient.User.PushSubscription.optIn();
+      if (await waitForPushSubscription(oneSignalClient)) {
+        markNotificationsEnabled();
+      } else {
+        setNotificationMessage('تم السماح بالإشعارات، لكن لم يكتمل الاشتراك بعد. تحقق من إعدادات المتصفح وحاول مجددًا.', 'error');
+      }
+    } catch (error) {
+      console.warn('OneSignal subscription could not be completed.', error);
+      setNotificationMessage('تعذر تفعيل الإشعارات الآن. تحقق من اتصالك وإعدادات الموقع ثم حاول مجددًا.', 'error');
+    } finally {
+      if (!oneSignalClient.User.PushSubscription.optedIn) {
+        enableNotificationsButton.disabled = false;
+        enableNotificationsButton.textContent = 'تفعيل الإشعارات';
+      }
+    }
+  });
+}
 
 // Homepage banner slider: reads up to three public images from Supabase.
 const BANNER_TABLE = 'homepage_banners';
