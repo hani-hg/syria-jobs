@@ -420,6 +420,14 @@ function isInstalledPwa() {
   return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 }
 
+function withTimeout(promise, timeoutMs, code) {
+  let timeoutId;
+  const timeout = new Promise((resolve, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(code)), timeoutMs);
+  });
+  return Promise.race([Promise.resolve(promise), timeout]).finally(() => clearTimeout(timeoutId));
+}
+
 function waitForPushSubscription(OneSignal, timeoutMs = 10000) {
   const subscription = OneSignal.User.PushSubscription;
   if (subscription.optedIn) return Promise.resolve(true);
@@ -519,15 +527,16 @@ if (enableNotificationsButton && notificationStatus) {
 
     enableNotificationsButton.disabled = true;
     enableNotificationsButton.textContent = 'جارٍ التفعيل…';
-    setNotificationMessage('سيطلب المتصفح إذن الإشعارات الآن.');
+    setNotificationMessage('بانتظار نافذة إذن الإشعارات من المتصفح…');
     try {
-      await oneSignalClient.Notifications.requestPermission();
+      await withTimeout(oneSignalClient.Notifications.requestPermission(), 12000, 'permission-request-timeout');
       if (!oneSignalClient.Notifications.permission) {
         setNotificationMessage('لم يتم منح الإذن. يمكنك السماح لاحقًا من إعدادات الموقع في المتصفح.', 'error');
         return;
       }
 
-      await oneSignalClient.User.PushSubscription.optIn();
+      setNotificationMessage('تم منح الإذن؛ جارٍ إنشاء الاشتراك…');
+      await withTimeout(oneSignalClient.User.PushSubscription.optIn(), 12000, 'push-subscription-timeout');
       if (await waitForPushSubscription(oneSignalClient)) {
         markNotificationsEnabled();
       } else {
@@ -535,7 +544,13 @@ if (enableNotificationsButton && notificationStatus) {
       }
     } catch (error) {
       console.warn('OneSignal subscription could not be completed.', error);
-      setNotificationMessage('تعذر تفعيل الإشعارات الآن. تحقق من اتصالك وإعدادات الموقع ثم حاول مجددًا.', 'error');
+      if (error?.message === 'permission-request-timeout') {
+        setNotificationMessage('لم يستجب المتصفح لطلب الإذن. على iPhone افتح الموقع من أيقونة الشاشة الرئيسية على iOS 16.4 أو أحدث، ثم أعد المحاولة.', 'error');
+      } else if (error?.message === 'push-subscription-timeout') {
+        setNotificationMessage('تم منح الإذن لكن تأخر إنشاء الاشتراك. تحقق من اتصال الهاتف وإعدادات إشعارات الموقع ثم أعد المحاولة.', 'error');
+      } else {
+        setNotificationMessage('تعذر تفعيل الإشعارات الآن. تحقق من إعدادات الإشعارات في النظام واتصالك ثم حاول مجددًا.', 'error');
+      }
     } finally {
       if (!oneSignalClient.User.PushSubscription.optedIn) {
         enableNotificationsButton.disabled = false;
