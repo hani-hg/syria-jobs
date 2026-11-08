@@ -417,7 +417,8 @@ function isAppleMobileDevice() {
 }
 
 function isInstalledPwa() {
-  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
 }
 
 function withTimeout(promise, timeoutMs, code) {
@@ -528,7 +529,15 @@ if (enableNotificationsButton && notificationStatus) {
     enableNotificationsButton.disabled = true;
     enableNotificationsButton.textContent = 'جارٍ التفعيل…';
     setNotificationMessage('بانتظار نافذة إذن الإشعارات من المتصفح…');
+    let permissionPromptShown = false;
+    let permissionPromptListenerRegistered = false;
+    const onPermissionPromptDisplay = () => {
+      permissionPromptShown = true;
+      setNotificationMessage('ظهرت نافذة إذن الإشعارات من النظام؛ اختر «سماح» للمتابعة.');
+    };
     try {
+      oneSignalClient.Notifications.addEventListener('permissionPromptDisplay', onPermissionPromptDisplay);
+      permissionPromptListenerRegistered = true;
       await withTimeout(oneSignalClient.Notifications.requestPermission(), 12000, 'permission-request-timeout');
       if (!oneSignalClient.Notifications.permission) {
         setNotificationMessage('لم يتم منح الإذن. يمكنك السماح لاحقًا من إعدادات الموقع في المتصفح.', 'error');
@@ -545,13 +554,22 @@ if (enableNotificationsButton && notificationStatus) {
     } catch (error) {
       console.warn('OneSignal subscription could not be completed.', error);
       if (error?.message === 'permission-request-timeout') {
-        setNotificationMessage('لم يستجب المتصفح لطلب الإذن. على iPhone افتح الموقع من أيقونة الشاشة الرئيسية على iOS 16.4 أو أحدث، ثم أعد المحاولة.', 'error');
+        if (permissionPromptShown) {
+          setNotificationMessage('ظهرت نافذة إذن النظام لكن لم يصل ردّها خلال المهلة. اختر «سماح» أو «عدم السماح» في نافذة النظام، ثم أعد المحاولة.', 'error');
+        } else if (isAppleMobileDevice()) {
+          setNotificationMessage('لم يرصد الموقع ظهور نافذة الإذن. على iOS 26 تأكد من تفعيل «Open as Web App» عند إضافة الموقع، ثم افتح أيقونة الشاشة الرئيسية وأعد المحاولة.', 'error');
+        } else {
+          setNotificationMessage('لم تظهر نافذة الإذن من المتصفح. تحقق من إعدادات الإشعارات للموقع ثم أعد المحاولة.', 'error');
+        }
       } else if (error?.message === 'push-subscription-timeout') {
         setNotificationMessage('تم منح الإذن لكن تأخر إنشاء الاشتراك. تحقق من اتصال الهاتف وإعدادات إشعارات الموقع ثم أعد المحاولة.', 'error');
       } else {
         setNotificationMessage('تعذر تفعيل الإشعارات الآن. تحقق من إعدادات الإشعارات في النظام واتصالك ثم حاول مجددًا.', 'error');
       }
     } finally {
+      if (permissionPromptListenerRegistered) {
+        oneSignalClient.Notifications.removeEventListener('permissionPromptDisplay', onPermissionPromptDisplay);
+      }
       if (!oneSignalClient.User.PushSubscription.optedIn) {
         enableNotificationsButton.disabled = false;
         enableNotificationsButton.textContent = 'تفعيل الإشعارات';
