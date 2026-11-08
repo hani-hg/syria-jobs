@@ -643,3 +643,4 @@ $('bannerSlider').addEventListener('mouseleave', startBannerRotation);
 $('bannerSlider').addEventListener('focusin', stopBannerRotation);
 $('bannerSlider').addEventListener('focusout', (event) => { if (!event.currentTarget.contains(event.relatedTarget)) startBannerRotation(); });
 loadBannerSlides();
+
