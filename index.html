@@ -43,8 +43,7 @@
       try {
         await OneSignal.init({
           appId: "3029809e-5107-41df-9a9e-3f52a4fb028f",
-          serviceWorkerPath: "OneSignalSDKWorker.js",
-          serviceWorkerParam: { scope: "/push/onesignal/" }
+          serviceWorkerPath: "/OneSignalSDKWorker.js"
         });
         window.OneSignalInitState = 'ready';
         window.dispatchEvent(new CustomEvent('syria-onesignal-ready', { detail: OneSignal }));
