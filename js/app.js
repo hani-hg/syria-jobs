@@ -421,38 +421,6 @@ function isInstalledPwa() {
     window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
 }
 
-function withTimeout(promise, timeoutMs, code) {
-  let timeoutId;
-  const timeout = new Promise((resolve, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(code)), timeoutMs);
-  });
-  return Promise.race([Promise.resolve(promise), timeout]).finally(() => clearTimeout(timeoutId));
-}
-
-function waitForPushSubscription(OneSignal, timeoutMs = 10000) {
-  const subscription = OneSignal.User.PushSubscription;
-  if (subscription.optedIn) return Promise.resolve(true);
-
-  return new Promise((resolve) => {
-    let timeoutId;
-    let finished = false;
-    const finish = (subscribed) => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timeoutId);
-      subscription.removeEventListener('change', onChange);
-      resolve(subscribed);
-    };
-    const onChange = (event) => {
-      if (event?.current?.optedIn) finish(true);
-    };
-
-    subscription.addEventListener('change', onChange);
-    timeoutId = setTimeout(() => finish(Boolean(subscription.optedIn)), timeoutMs);
-    if (subscription.optedIn) finish(true);
-  });
-}
-
 if (enableNotificationsButton && notificationStatus) {
   enableNotificationsButton.disabled = true;
   setNotificationMessage('جارٍ تهيئة خدمة الإشعارات…');
@@ -529,51 +497,29 @@ if (enableNotificationsButton && notificationStatus) {
     enableNotificationsButton.disabled = true;
     enableNotificationsButton.textContent = 'جارٍ التفعيل…';
     setNotificationMessage('بانتظار نافذة إذن الإشعارات من المتصفح…');
-    let permissionPromptShown = false;
-    let permissionPromptListenerRegistered = false;
-    const onPermissionPromptDisplay = () => {
-      permissionPromptShown = true;
-      setNotificationMessage('ظهرت نافذة إذن الإشعارات من النظام؛ اختر «سماح» للمتابعة.');
-    };
+    
     try {
-      oneSignalClient.Notifications.addEventListener('permissionPromptDisplay', onPermissionPromptDisplay);
-      permissionPromptListenerRegistered = true;
-      await withTimeout(oneSignalClient.Notifications.requestPermission(), 12000, 'permission-request-timeout');
-      if (!oneSignalClient.Notifications.permission) {
-        setNotificationMessage('لم يتم منح الإذن. يمكنك السماح لاحقًا من إعدادات الموقع في المتصفح.', 'error');
-        return;
-      }
-
-      setNotificationMessage('تم منح الإذن؛ جارٍ إنشاء الاشتراك…');
-      await withTimeout(oneSignalClient.User.PushSubscription.optIn(), 12000, 'push-subscription-timeout');
-      if (await waitForPushSubscription(oneSignalClient)) {
+      // التعديل هنا: طلب الإذن مباشرة دون مؤقتات
+      await oneSignalClient.Notifications.requestPermission();
+      
+      if (oneSignalClient.Notifications.permission) {
+        setNotificationMessage('تم منح الإذن؛ جارٍ إنشاء الاشتراك…');
+        await oneSignalClient.User.PushSubscription.optIn();
         markNotificationsEnabled();
       } else {
-        setNotificationMessage('تم السماح بالإشعارات، لكن لم يكتمل الاشتراك بعد. تحقق من إعدادات المتصفح وحاول مجددًا.', 'error');
-      }
-    } catch (error) {
-      console.warn('OneSignal subscription could not be completed.', error);
-      if (error?.message === 'permission-request-timeout') {
-        if (permissionPromptShown) {
-          setNotificationMessage('ظهرت نافذة إذن النظام لكن لم يصل ردّها خلال المهلة. اختر «سماح» أو «عدم السماح» في نافذة النظام، ثم أعد المحاولة.', 'error');
-        } else if (isAppleMobileDevice()) {
-          setNotificationMessage('لم يرصد الموقع ظهور نافذة الإذن. على iOS 26 تأكد من تفعيل «Open as Web App» عند إضافة الموقع، ثم افتح أيقونة الشاشة الرئيسية وأعد المحاولة.', 'error');
-        } else {
-          setNotificationMessage('لم تظهر نافذة الإذن من المتصفح. تحقق من إعدادات الإشعارات للموقع ثم أعد المحاولة.', 'error');
-        }
-      } else if (error?.message === 'push-subscription-timeout') {
-        setNotificationMessage('تم منح الإذن لكن تأخر إنشاء الاشتراك. تحقق من اتصال الهاتف وإعدادات إشعارات الموقع ثم أعد المحاولة.', 'error');
-      } else {
-        setNotificationMessage('تعذر تفعيل الإشعارات الآن. تحقق من إعدادات الإشعارات في النظام واتصالك ثم حاول مجددًا.', 'error');
-      }
-    } finally {
-      if (permissionPromptListenerRegistered) {
-        oneSignalClient.Notifications.removeEventListener('permissionPromptDisplay', onPermissionPromptDisplay);
-      }
-      if (!oneSignalClient.User.PushSubscription.optedIn) {
+        setNotificationMessage('لم يتم منح الإذن. يمكنك السماح لاحقًا من إعدادات الموقع في المتصفح.', 'error');
         enableNotificationsButton.disabled = false;
         enableNotificationsButton.textContent = 'تفعيل الإشعارات';
       }
+    } catch (error) {
+      console.warn('OneSignal subscription could not be completed.', error);
+      if (isAppleMobileDevice() && !isInstalledPwa()) {
+        setNotificationMessage('لم يرصد الموقع ظهور نافذة الإذن. على iOS تأكد من تفعيل «Open as Web App» عند إضافة الموقع، ثم افتح أيقونة الشاشة الرئيسية وأعد المحاولة.', 'error');
+      } else {
+        setNotificationMessage('تعذر تفعيل الإشعارات الآن. تحقق من إعدادات الإشعارات في النظام واتصالك ثم حاول مجددًا.', 'error');
+      }
+      enableNotificationsButton.disabled = false;
+      enableNotificationsButton.textContent = 'تفعيل الإشعارات';
     }
   });
 }
@@ -643,4 +589,3 @@ $('bannerSlider').addEventListener('mouseleave', startBannerRotation);
 $('bannerSlider').addEventListener('focusin', stopBannerRotation);
 $('bannerSlider').addEventListener('focusout', (event) => { if (!event.currentTarget.contains(event.relatedTarget)) startBannerRotation(); });
 loadBannerSlides();
-
