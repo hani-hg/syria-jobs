@@ -10,12 +10,16 @@ URL = os.environ.get("SUPABASE_URL")
 KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(URL, KEY)
 
-# القنوات الأربع
+# قائمة القنوات الموسعة (8 قنوات)
 CHANNELS = [
-    "wazafne175",   # وظفني
-    "syrjob",       # وظائف سوريا
-    "Jobs_Bank_Syr",# بنك الوظائف
-    "SyMOAD"        # وزارة التنمية الإدارية
+    "wazafne175",     # وظفني
+    "syrjob",         # وظائف سوريا
+    "Jobs_Bank_Syr",  # بنك الوظائف
+    "SyMOAD",         # وزارة التنمية الإدارية
+    "syria_jobs",     # قناة إضافية 1
+    "job_syria",      # قناة إضافية 2
+    "syrianjobs",     # قناة إضافية 3
+    "jobs_in_syria"   # قناة إضافية 4
 ]
 
 def clean_title(text):
@@ -34,6 +38,16 @@ def clean_text(text):
     lines = [line.strip() for line in text.split('\n') if line.strip()]
     return '\n'.join(lines)
 
+def archive_old_jobs():
+    print("جاري أرشفة الإعلانات القديمة...")
+    try:
+        # حذف الإعلانات التي انتهى تاريخها (أقدم من اليوم)
+        today = datetime.now().strftime('%Y-%m-%d')
+        supabase.table("job_submissions").delete().lt("deadline", today).execute()
+        print("تم حذف الإعلانات المنتهية.")
+    except Exception as e:
+        print(f"خطأ في الأرشفة: {e}")
+
 def fetch_telegram_jobs():
     print("بدء عملية السحب...")
     all_jobs = []
@@ -48,7 +62,7 @@ def fetch_telegram_jobs():
             soup = BeautifulSoup(response.text, 'html.parser')
             messages = soup.find_all('div', class_='tgme_widget_message_text')
             
-            for msg in messages[-3:]:
+            for msg in messages[-2:]: # سحب آخر إعلانين فقط من كل قناة لتجنب التكرار
                 raw_text = msg.get_text(separator='\n').strip()
                 if len(raw_text) < 30: continue
 
@@ -77,7 +91,6 @@ def save_to_supabase(jobs):
     added = 0
     for job in jobs:
         try:
-            # تم إصلاح هذا الجزء ليتوافق مع سياسات قاعدة البيانات
             check = supabase.table("job_submissions").select("id").eq("title", job['title']).execute()
             if not check.data:
                 supabase.table("job_submissions").insert(job).execute()
@@ -90,6 +103,7 @@ def save_to_supabase(jobs):
     print(f"انتهت العملية. تمت إضافة {added} إعلان.")
 
 if __name__ == "__main__":
-    new_jobs = fetch_telegram_jobs()
+    archive_old_jobs() # 1. حذف المنتهي
+    new_jobs = fetch_telegram_jobs() # 2. جلب الجديد
     if new_jobs:
         save_to_supabase(new_jobs)
