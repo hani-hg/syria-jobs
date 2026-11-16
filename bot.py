@@ -10,22 +10,15 @@ URL = os.environ.get("SUPABASE_URL")
 KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(URL, KEY)
 
+# القنوات الأربع
 CHANNELS = [
-    "wazafne175", "syrjob", "Jobs_Bank_Syr", "SyMOAD"
+    "wazafne175",   # وظفني
+    "syrjob",       # وظائف سوريا
+    "Jobs_Bank_Syr",# بنك الوظائف
+    "SyMOAD"        # وزارة التنمية الإدارية
 ]
 
-def clean_text(text):
-    """دالة لتنظيف النص من المشاهدات والهاشتاقات"""
-    # حذف سطر المشاهدات
-    text = re.sub(r'المشاهدات:\s*\d+', '', text)
-    # حذف الهاشتاقات
-    text = re.sub(r'#\S+', '', text)
-    # حذف الأسطر الفارغة الزائدة
-    lines = [line.strip() for line in text.split('\n') if line.strip()]
-    return '\n'.join(lines)
-
 def clean_title(text):
-    """استخراج عنوان نظيف"""
     lines = text.split('\n')
     for line in lines:
         line = line.strip()
@@ -34,6 +27,12 @@ def clean_title(text):
             if cleaned:
                 return cleaned[:100]
     return "إعلان وظيفة"
+
+def clean_text(text):
+    text = re.sub(r'المشاهدات:\s*\d+', '', text)
+    text = re.sub(r'#\S+', '', text)
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    return '\n'.join(lines)
 
 def fetch_telegram_jobs():
     print("بدء عملية السحب...")
@@ -53,7 +52,6 @@ def fetch_telegram_jobs():
                 raw_text = msg.get_text(separator='\n').strip()
                 if len(raw_text) < 30: continue
 
-                # تنظيف النص قبل الحفظ
                 cleaned_text = clean_text(raw_text)
                 title = clean_title(cleaned_text)
                 
@@ -66,7 +64,7 @@ def fetch_telegram_jobs():
                     "field": "عام",
                     "type": job_type,
                     "deadline": (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d'),
-                    "description": cleaned_text, # حفظ النص النظيف
+                    "description": cleaned_text,
                     "source": f"https://t.me/{channel}",
                     "status": "pending"
                 }
@@ -79,13 +77,16 @@ def save_to_supabase(jobs):
     added = 0
     for job in jobs:
         try:
-            check = supabase.table("job_submissions").select("id").ilike("title", f"%{job['title'][:30]}%").execute()
+            # تم إصلاح هذا الجزء ليتوافق مع سياسات قاعدة البيانات
+            check = supabase.table("job_submissions").select("id").eq("title", job['title']).execute()
             if not check.data:
-                supabase.table("job_submissions").insert(job, returning="minimal").execute()
+                supabase.table("job_submissions").insert(job).execute()
                 print(f"✅ تمت إضافة: {job['title']}")
                 added += 1
+            else:
+                print(f"⏩ موجود مسبقاً: {job['title']}")
         except Exception as e:
-            print(f"❌ خطأ: {e}")
+            print(f"❌ خطأ في الإدخال: {e}")
     print(f"انتهت العملية. تمت إضافة {added} إعلان.")
 
 if __name__ == "__main__":
