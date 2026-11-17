@@ -1,13 +1,16 @@
 import os
 import re
-from html import escape
 import requests
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
 from datetime import datetime, timedelta
 
 URL = os.environ.get("SUPABASE_URL")
-KEY = os.environ.get("SUPABASE_KEY")
+SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+KEY = SERVICE_ROLE_KEY or os.environ.get("SUPABASE_KEY")
+if not URL or not KEY:
+    raise RuntimeError("SUPABASE_URL and a Supabase key must be configured in GitHub Actions secrets.")
+print("Supabase authentication: " + ("service-role key" if SERVICE_ROLE_KEY else "SUPABASE_KEY fallback"))
 supabase: Client = create_client(URL, KEY)
 
 # توكن البوت الذي أضفته كمشرف (يجب أن يكون في أسرار GitHub)
@@ -27,21 +30,20 @@ def send_to_telegram(title, text, source):
         print("تعذر النشر إلى Telegram: سر TELEGRAM_CHAT_ID غير مضبوط.")
         return False
 
-    safe_title = escape(title or "إعلان وظيفة")
-    safe_text = escape((text or "")[:800])
-    safe_source = escape(source or "", quote=True)
-    message = f"💼 <b>{safe_title}</b>\n\n{safe_text}\n\n🔗 <a href=\"{safe_source}\">رابط الإعلان الأصلي</a>\n\n#وظائف_سوريا"
+    # Plain text avoids Telegram HTML parse errors; no parse_mode is sent.
+    message = f"💼 {title or 'إعلان وظيفة'}\n\n{(text or '')[:800]}\n\nرابط الإعلان الأصلي: {source or ''}\n\n#وظائف_سوريا"
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHANNEL_ID, "text": message, "parse_mode": "HTML"}
+    payload = {"chat_id": CHANNEL_ID, "text": message}
     try:
         response = requests.post(url, json=payload, timeout=20)
+        print(f"Telegram response: status_code={response.status_code}, text={response.text}")
         try:
             result = response.json()
         except ValueError:
             result = None
 
         if not response.ok or (isinstance(result, dict) and not result.get("ok", False)):
-            print(f"فشل النشر إلى Telegram (HTTP {response.status_code}): {response.text}")
+            print(f"فشل النشر إلى Telegram (HTTP {response.status_code}).")
             return False
 
         print(f"تم النشر إلى Telegram بنجاح (HTTP {response.status_code}).")
@@ -102,18 +104,35 @@ def fetch_telegram_jobs():
     return all_jobs
 
 def save_to_supabase(jobs):
+    added = 0
+    duplicates = 0
+    telegram_sent = 0
+    telegram_failed = 0
+    database_failed = 0
     for job in jobs:
         try:
             check = supabase.table("job_submissions").select("id").eq("title", job['title']).execute()
             if not check.data:
                 supabase.table("job_submissions").insert(job).execute()
                 print(f"✅ تمت إضافة: {job['title']}")
+                added += 1
                 # إرسال الإعلان إلى قناة تيليجرام الجديدة
-                send_to_telegram(job['title'], job['description'], job['source'])
+                if send_to_telegram(job['title'], job['description'], job['source']):
+                    telegram_sent += 1
+                else:
+                    telegram_failed += 1
             else:
-                print(f"⏩ موجود مسبقاً")
+                duplicates += 1
+                print(f"⏩ موجود مسبقاً؛ لن يُعاد نشره إلى Telegram: {job['title']}")
         except Exception as e:
+            database_failed += 1
             print(f"❌ خطأ في الإدخال: {e}")
+    print(
+        "ملخص التشغيل: "
+        f"تمت الإضافة={added}، مكرر={duplicates}، "
+        f"نشر Telegram ناجح={telegram_sent}، فشل Telegram={telegram_failed}، "
+        f"فشل قاعدة البيانات={database_failed}"
+    )
 
 if __name__ == "__main__":
     archive_old_jobs()
