@@ -7,11 +7,12 @@ from datetime import datetime, timedelta
 
 URL = os.environ.get("SUPABASE_URL")
 SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-KEY = SERVICE_ROLE_KEY or os.environ.get("SUPABASE_KEY")
-if not URL or not KEY:
-    raise RuntimeError("SUPABASE_URL and a Supabase key must be configured in GitHub Actions secrets.")
-print("Supabase authentication: " + ("service-role key" if SERVICE_ROLE_KEY else "SUPABASE_KEY fallback"))
-supabase: Client = create_client(URL, KEY)
+if not URL:
+    raise RuntimeError("Missing required GitHub Actions secret: SUPABASE_URL.")
+if not SERVICE_ROLE_KEY:
+    raise RuntimeError("Missing required GitHub Actions secret: SUPABASE_SERVICE_ROLE_KEY; refusing to fall back to SUPABASE_KEY.")
+print("Supabase authentication: required SUPABASE_SERVICE_ROLE_KEY is present.")
+supabase: Client = create_client(URL, SERVICE_ROLE_KEY)
 
 # توكن البوت الذي أضفته كمشرف (يجب أن يكون في أسرار GitHub)
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -73,6 +74,7 @@ def archive_old_jobs():
         print("تم حذف الإعلانات المنتهية.")
     except Exception as e:
         print(f"خطأ في الأرشفة: {e}")
+        raise RuntimeError("Expired-job cleanup failed; verify SUPABASE_SERVICE_ROLE_KEY and table permissions.") from e
 
 def fetch_telegram_jobs():
     all_jobs = []
@@ -133,6 +135,10 @@ def save_to_supabase(jobs):
         f"نشر Telegram ناجح={telegram_sent}، فشل Telegram={telegram_failed}، "
         f"فشل قاعدة البيانات={database_failed}"
     )
+    if database_failed:
+        raise RuntimeError(f"{database_failed} database operation(s) failed; see the log lines above.")
+    if telegram_failed:
+        raise RuntimeError(f"{telegram_failed} Telegram send(s) failed; see response logs above.")
 
 if __name__ == "__main__":
     archive_old_jobs()
