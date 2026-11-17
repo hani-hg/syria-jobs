@@ -1,5 +1,6 @@
 import os
 import re
+from html import escape
 import requests
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
@@ -10,8 +11,8 @@ KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(URL, KEY)
 
 # توكن البوت الذي أضفته كمشرف (يجب أن يكون في أسرار GitHub)
-BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN") 
-CHANNEL_ID = "@syrianjobs_sy" # رابط القناة الجديدة
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+CHANNEL_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 CHANNELS = [
     "wazafne175", "syrjob", "Jobs_Bank_Syr", "SyMOAD",
@@ -19,14 +20,35 @@ CHANNELS = [
 ]
 
 def send_to_telegram(title, text, source):
-    if not BOT_TOKEN: return
-    message = f"💼 <b>{title}</b>\n\n{text[:800]}...\n\n🔗 <a href='{source}'>رابط الإعلان الأصلي</a>\n\n#وظائف_سوريا"
+    if not BOT_TOKEN:
+        print("تعذر النشر إلى Telegram: سر TELEGRAM_BOT_TOKEN غير مضبوط.")
+        return False
+    if not CHANNEL_ID:
+        print("تعذر النشر إلى Telegram: سر TELEGRAM_CHAT_ID غير مضبوط.")
+        return False
+
+    safe_title = escape(title or "إعلان وظيفة")
+    safe_text = escape((text or "")[:800])
+    safe_source = escape(source or "", quote=True)
+    message = f"💼 <b>{safe_title}</b>\n\n{safe_text}\n\n🔗 <a href=\"{safe_source}\">رابط الإعلان الأصلي</a>\n\n#وظائف_سوريا"
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHANNEL_ID, "text": message, "parse_mode": "HTML"}
     try:
-        requests.post(url, json=payload)
+        response = requests.post(url, json=payload, timeout=20)
+        try:
+            result = response.json()
+        except ValueError:
+            result = None
+
+        if not response.ok or (isinstance(result, dict) and not result.get("ok", False)):
+            print(f"فشل النشر إلى Telegram (HTTP {response.status_code}): {response.text}")
+            return False
+
+        print(f"تم النشر إلى Telegram بنجاح (HTTP {response.status_code}).")
+        return True
     except Exception as e:
         print(f"خطأ في النشر للقناة: {e}")
+        return False
 
 def clean_title(text):
     lines = text.split('\n')
