@@ -115,6 +115,30 @@ class TelegramDeliveryTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("not-json", result["error"])
 
+    def test_telegram_message_is_bounded_plain_text_and_removes_inline_urls(self):
+        class OkResponse:
+            ok = True
+            status_code = 200
+            text = '{"ok":true,"result":{"message_id":123}}'
+
+            def json(self):
+                return {"ok": True, "result": {"message_id": 123}}
+
+        long_text = "A" * 100 + " https://external.example/job " + "B" * 700
+        with patch.object(bot, "BOT_TOKEN", "test-token"), patch.object(
+            bot.requests, "post", return_value=OkResponse()
+        ) as request:
+            result = bot.send_to_telegram("عنوان", long_text, "https://t.me/channel/1")
+
+        payload = request.call_args.kwargs["json"]
+        message = payload["text"]
+        excerpt = message.split("\n\n")[1].split("\n\nالمصدر:")[0]
+        self.assertTrue(result["ok"])
+        self.assertNotIn("parse_mode", payload)
+        self.assertLessEqual(len(excerpt), 500)
+        self.assertNotIn("https://external.example", message)
+        self.assertIn("https://t.me/channel/1", message)
+
     def test_network_error_redacts_telegram_token(self):
         token = "test-token-secret"
         network_error = RuntimeError(f"failed URL /bot{token}/sendMessage")
@@ -176,10 +200,33 @@ class TelegramDeliveryTests(unittest.TestCase):
         with patch.object(bot, "supabase", client), patch.object(
             bot, "send_to_telegram", side_effect=send_results
         ) as sender:
-            with self.assertRaisesRegex(RuntimeError, "Telegram send"):
-                bot.save_to_supabase([sample_job()])
+            failed_summary = bot.save_to_supabase([sample_job()])
             summary = bot.save_to_supabase([sample_job()])
 
+        self.assertEqual(failed_summary["telegram_failed"], 1)
+        self.assertEqual(summary["telegram_sent"], 1)
+        self.assertEqual([entry[0]["status"] for entry in client.delivery_updates], ["failed", "sent"])
+        self.assertEqual(sender.call_count, 2)
+
+    def test_one_failed_announcement_does_not_stop_later_announcements(self):
+        first = sample_job()
+        second = sample_job()
+        second["title"] = "إعلان وظيفة ثانٍ"
+        second["source"] = "https://t.me/source_channel/124"
+        second["_telegram_delivery_key"] = "telegram:source_channel/124"
+        client = FakeSupabase(
+            claim_rows=[[{"claimed": True}], [{"claimed": True}]], duplicate=True
+        )
+        send_results = [
+            {"ok": False, "message_id": None, "error": "simulated Telegram rejection"},
+            {"ok": True, "message_id": 1000, "error": None},
+        ]
+        with patch.object(bot, "supabase", client), patch.object(
+            bot, "send_to_telegram", side_effect=send_results
+        ) as sender:
+            summary = bot.save_to_supabase([first, second])
+
+        self.assertEqual(summary["telegram_failed"], 1)
         self.assertEqual(summary["telegram_sent"], 1)
         self.assertEqual([entry[0]["status"] for entry in client.delivery_updates], ["failed", "sent"])
         self.assertEqual(sender.call_count, 2)
