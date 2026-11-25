@@ -87,6 +87,19 @@ def sample_job():
 
 
 class TelegramDeliveryTests(unittest.TestCase):
+    def test_token_is_read_from_exact_environment_name_and_trimmed(self):
+        self.assertEqual(
+            bot.load_telegram_bot_token({"TELEGRAM_BOT_TOKEN": "  123456:secret  "}),
+            "123456:secret",
+        )
+
+    def test_missing_token_is_empty_without_fallback(self):
+        self.assertEqual(bot.load_telegram_bot_token({}), "")
+        self.assertEqual(
+            bot.load_telegram_bot_token({"TELEGRAM_CHAT_ID": "old-value"}),
+            "",
+        )
+
     def test_source_message_id_is_the_stable_identity(self):
         key, url = bot.make_delivery_identity("source_channel", "source_channel/123", "body")
         self.assertEqual(key, "telegram:source_channel/123")

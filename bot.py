@@ -25,8 +25,15 @@ def create_supabase_client():
     return create_client(url, service_role_key)
 
 
-# توكن البوت الذي أضفته كمشرف (يجب أن يكون في أسرار GitHub)
-BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+def load_telegram_bot_token(environ=None):
+    """Read the configured GitHub Actions secret without logging any token characters."""
+    source = os.environ if environ is None else environ
+    return (source.get("TELEGRAM_BOT_TOKEN") or "").strip()
+
+
+# GitHub Actions secret name: TELEGRAM_BOT_TOKEN. Never print or partially expose its value.
+BOT_TOKEN = load_telegram_bot_token()
+print(f"Telegram bot token configured: {'yes' if BOT_TOKEN else 'no'}")
 TELEGRAM_CHANNEL_ID = os.environ.get("TELEGRAM_CHANNEL_ID", "@syrianjobs_sy").strip()
 
 CHANNELS = [
