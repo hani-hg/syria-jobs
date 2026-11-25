@@ -33,6 +33,7 @@ CHANNELS = [
     "wazafne175", "syrjob", "Jobs_Bank_Syr", "SyMOAD",
     "syria_jobs", "job_syria", "syrianjobs", "jobs_in_syria"
 ]
+MAX_TELEGRAM_TEXT_CHARS = 500
 
 
 def make_delivery_identity(channel, post_reference, text):
@@ -47,6 +48,16 @@ def make_delivery_identity(channel, post_reference, text):
     return f"sha256:{digest}", f"https://t.me/{channel}"
 
 
+def build_telegram_message(title, text, source):
+    # Keep the announcement plain and bounded; inline links remain available in the source post.
+    excerpt = (text or "")[:MAX_TELEGRAM_TEXT_CHARS]
+    excerpt = re.sub(r"(?:https?://|www\.)[^\s]+", "[رابط في المصدر الأصلي]", excerpt)
+    excerpt = excerpt[:MAX_TELEGRAM_TEXT_CHARS]
+    safe_title = (title or "إعلان وظيفة")[:100]
+    safe_source = (source or "")[:256]
+    return f"{safe_title}\n\n{excerpt}\n\nالمصدر: {safe_source}"
+
+
 def send_to_telegram(title, text, source):
     if not BOT_TOKEN:
         error = "سر TELEGRAM_BOT_TOKEN غير مضبوط."
@@ -57,11 +68,8 @@ def send_to_telegram(title, text, source):
         print(f"تعذر النشر إلى Telegram: {error}")
         return {"ok": False, "message_id": None, "error": error}
 
-    # Plain text avoids Telegram HTML parse errors; no parse_mode is sent.
-    message = (
-        f"💼 {title or 'إعلان وظيفة'}\n\n{(text or '')[:800]}\n\n"
-        f"رابط الإعلان الأصلي: {source or ''}\n\n#وظائف_سوريا"
-    )
+    # Plain text avoids Telegram HTML/Markdown parse errors; no parse_mode is sent.
+    message = build_telegram_message(title, text, source)
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHANNEL_ID, "text": message}
     try:
@@ -267,8 +275,6 @@ def save_to_supabase(jobs):
         raise RuntimeError(f"{delivery_log_failed} Telegram delivery-ledger operation(s) failed.")
     if database_failed:
         raise RuntimeError(f"{database_failed} database operation(s) failed; see the log lines above.")
-    if telegram_failed:
-        raise RuntimeError(f"{telegram_failed} Telegram send(s) failed; see response logs above.")
     return summary
 
 
