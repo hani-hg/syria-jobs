@@ -5,13 +5,22 @@ from bs4 import BeautifulSoup
 from supabase import create_client
 from datetime import datetime, timedelta
 
-# جلب المفاتيح
 URL = os.environ.get("SUPABASE_URL")
 KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY")
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.environ.get("TELEGRAM_CHANNEL_ID") or "@syrianjobs_sy"
 
 supabase = create_client(URL, KEY)
+
+def clean_title(text):
+    lines = text.split('\n')
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith('#') and len(line) > 10:
+            # إزالة الإيموجي والرموز من بداية السطر
+            cleaned = re.sub(r'^[^\w\u0600-\u06FF]+', '', line)
+            if cleaned: return cleaned[:100]
+    return "إعلان وظيفة"
 
 def fetch_and_save():
     print("بدء السحب...")
@@ -24,22 +33,24 @@ def fetch_and_save():
             soup = BeautifulSoup(res.text, 'html.parser')
             msgs = soup.find_all('div', class_='tgme_widget_message_text')
             
-            for msg in msgs[-1:]: # نأخذ رسالة واحدة فقط للتجربة
+            for msg in msgs[-1:]:
                 text = msg.get_text(separator='\n').strip()
                 if len(text) < 30: continue
                 
-                title = text.split('\n')[0][:100]
+                title = clean_title(text)
                 job = {
                     "title": title, "company": f"من {channel}", "governorate": "سوريا",
                     "field": "عام", "type": "خاص", "deadline": (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d'),
                     "description": text[:500], "source": f"https://t.me/{channel}", "status": "pending"
                 }
                 
-                # 1. حفظ في الموقع
-                supabase.table("job_submissions").insert(job).execute()
-                print(f"تم الحفظ في الموقع: {title}")
-                
-                # 2. إرسال إلى تيليجرام (بدون تعقيدات)
+                try:
+                    supabase.table("job_submissions").insert(job).execute()
+                    print(f"تم الحفظ في الموقع: {title}")
+                except Exception as e:
+                    print(f"خطأ في قاعدة البيانات: {e}")
+                    continue
+
                 if BOT_TOKEN and CHAT_ID:
                     telegram_msg = f"💼 {title}\n\n{text[:200]}...\n\n🔗 {job['source']}"
                     tg_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
