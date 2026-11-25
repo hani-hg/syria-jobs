@@ -16,7 +16,7 @@ supabase: Client = create_client(URL, SERVICE_ROLE_KEY)
 
 # توكن البوت الذي أضفته كمشرف (يجب أن يكون في أسرار GitHub)
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-CHANNEL_ID = os.environ.get("TELEGRAM_CHAT_ID")
+TELEGRAM_CHANNEL_ID = os.environ.get("TELEGRAM_CHANNEL_ID", "@syrianjobs_sy").strip()
 
 CHANNELS = [
     "wazafne175", "syrjob", "Jobs_Bank_Syr", "SyMOAD",
@@ -27,14 +27,14 @@ def send_to_telegram(title, text, source):
     if not BOT_TOKEN:
         print("تعذر النشر إلى Telegram: سر TELEGRAM_BOT_TOKEN غير مضبوط.")
         return False
-    if not CHANNEL_ID:
-        print("تعذر النشر إلى Telegram: سر TELEGRAM_CHAT_ID غير مضبوط.")
+    if not TELEGRAM_CHANNEL_ID:
+        print("تعذر النشر إلى Telegram: وجهة القناة غير مضبوطة؛ لن يُستخدم TELEGRAM_CHAT_ID القديم.")
         return False
 
     # Plain text avoids Telegram HTML parse errors; no parse_mode is sent.
     message = f"💼 {title or 'إعلان وظيفة'}\n\n{(text or '')[:800]}\n\nرابط الإعلان الأصلي: {source or ''}\n\n#وظائف_سوريا"
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHANNEL_ID, "text": message}
+    payload = {"chat_id": TELEGRAM_CHANNEL_ID, "text": message}
     try:
         response = requests.post(url, json=payload, timeout=20)
         print(f"Telegram response: status_code={response.status_code}, text={response.text}")
